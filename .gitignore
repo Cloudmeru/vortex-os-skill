@@ -1,0 +1,38 @@
+# Build artifacts
+*.obj
+*.exp
+*.lib
+*.pdb
+*.ilk
+*.dll
+
+# Output dirs
+obj/
+bin/
+out/
+dist/build/
+
+# IDE
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# OS junk
+Thumbs.db
+.DS_Store
+desktop.ini
+
+# PowerShell
+*.ps1xml~
+
+# Skill runtime state (regenerated on every dispatch)
+state/
+memory/
+swarms/
+tasks/
+deliverables/
+templates/
