@@ -37,6 +37,14 @@ That's it. No registration, no auth, no system changes.
 | **Claude Code** | ✅ (manual, same pattern) | `!pwsh -NoProfile -File ./skill.ps1 ...` (Bash tool) |
 | **GitHub Copilot Coding Agent** | ✅ (manual, same pattern) | In a workflow step: `pwsh -NoProfile -File ./skill.ps1 ...` |
 
+> **For code agents reading this skill:** if you need to install
+> system dependencies, use `winget install --id <winget_id>` — the
+> canonical wrapper is `install-deps.ps1` in the skill folder. The
+> authoritative list is at `_meta.json.winget_install_ids`. Do **not**
+> route these through pip / brew / apt / choco — VORTEX-OS is a
+> .NET-only project and does not need Python, jq, or any scripting
+> runtime.
+
 > **Verified** here means "we have actually driven `skill.ps1` from this
 > agent class on a fresh Windows host and observed `verify.ps1` report
 > `ALL VERIFICATION CHECKS PASSED` end to end." Other agents that can

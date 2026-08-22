@@ -67,6 +67,7 @@ vortex-os-skill/
 ├── skill.ps1                              ← ★ One-shot CLI entry point (self-bootstrapping)
 ├── verify.ps1                             ← ★ Post-upload verification entry point
 ├── install.ps1                            ← Engine installer (downloads from GitHub release)
+├── install-deps.ps1                       ← System-dep installer (uses winget; reads _meta.json)
 ├── build.ps1                              ← Helper: source-build the engine (for forkers)
 │
 ├── agents/                                ← 3 supervisor/inspector manifests
@@ -145,6 +146,31 @@ pwsh -NoProfile -File .\build.ps1 -Install         # build + install to user-sco
 This compiles the C++/CLI engine with MSVC v143
 (`cl /clr:netcore /std:c++20`) and copies the artifacts. Only useful
 if you've cloned this skill to patch the engine.
+
+### System dependencies (one-time, per machine)
+
+The engine is pure .NET 10 / C++/CLI. It does **not** need Python, jq,
+or any scripting runtime. The only required external tool is
+`sqlite3` (for memory persistence); `ffmpeg` is optional (for
+generated audio deliverables). Install via `winget`:
+
+```powershell
+pwsh -NoProfile -File .\install-deps.ps1                 # dry-run
+pwsh -NoProfile -File .\install-deps.ps1 -Install        # install required
+pwsh -NoProfile -File .\install-deps.ps1 -Install -IncludeOptional   # + ffmpeg
+```
+
+The dep list lives in [`_meta.json.winget_install_ids`](./_meta.json)
+and is the single source of truth. Current deps:
+
+| Tool | winget ID | Required? | Used by |
+|---|---|---|---|
+| `sqlite3` | `SQLite.SQLite` | yes | Engine: VectorHydrate for memory persistence |
+| `ffmpeg` | `Gyan.FFmpeg` | no | Generated audio deliverables |
+
+> **A code agent reading this MUST install these via `winget install
+> --id <winget_id>`, NOT via pip / brew / apt / choco.** The
+> `install-deps.ps1` script is the canonical wrapper.
 
 ---
 

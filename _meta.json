@@ -64,7 +64,8 @@
     "user_docs": "README.md",
     "code_agent_compat": "COMPATIBILITY.md",
     "installer": "install.ps1",
-    "source_build_helper": "build.ps1"
+    "source_build_helper": "build.ps1",
+    "dep_installer": "install-deps.ps1"
   },
   "install": {
     "self_bootstrap": true,
@@ -110,11 +111,24 @@
     "runtime": ".NET 10 (PowerShell 7+ Core, hosting the C++/CLI Vortex.dll)",
     "engine_source": "https://github.com/Cloudmeru/vortex-os-dotnet",
     "system_tools": [
-      "python3",
-      "jq",
       "sqlite3",
       "ffmpeg"
-    ]
+    ],
+    "winget_install_ids": [
+      {
+        "name": "sqlite3",
+        "winget_id": "SQLite.SQLite",
+        "required": true,
+        "description": "SQLite CLI (used by the engine's VectorHydrate for memory persistence). If missing, the engine skips memory persistence and writes a schema file instead."
+      },
+      {
+        "name": "ffmpeg",
+        "winget_id": "Gyan.FFmpeg",
+        "required": false,
+        "description": "Audio/video processor. Not used by the engine itself, but required by generated *audio deliverables* (Foley, sample chopping, DSP). Install only if you plan to generate audio deliverables."
+      }
+    ],
+    "winget_install_note": "The engine is pure .NET 10 / C++/CLI. It does NOT need Python, jq, or any scripting runtime. All system deps install via Windows Package Manager (winget) — never pip/brew/apt. Use the bundled install-deps.ps1 to install."
   },
   "short_description": "VORTEX-OS: Native Autonomous Studio Command Center.",
   "skill_id": "minimax-skill-vortex-os-7c3a9f1e",
@@ -163,9 +177,9 @@
       "Procedural media generation (audio, narrative, code, video) at factory scale, entirely in-house with no external API keys"
     ]
   },
-  "updated_at": 1787380000000,
+  "updated_at": 1787382000000,
   "verification_date": "2026-08-22",
   "verification_status": "Clean package verified: skill scripts + agents + docs present, JSON valid, install.ps1 downloads + installs engine from public release, all 8 verification checks pass on a fresh install. Operator playbook moved to references/INSTRUCTIONS.md following the Mavis/Claude 3-level loading convention; SKILL.md kept lean for always-on trigger detection.",
   "verified": true,
-  "version": "0.1.2"
+  "version": "0.1.3"
 }

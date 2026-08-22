@@ -4,6 +4,31 @@ All notable changes to the VORTEX-OS skill package are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.1.3] — 2026-08-22
+
+### Changed
+- **System dependencies are now winget-only.** The previous
+  `_meta.json.system_tools` listed `python3`, `jq`, `sqlite3`,
+  `ffmpeg` as generic tool names. Code agents reading that list
+  sometimes routed the install through `pip` (which is wrong for
+  Windows + wrong for a .NET-only project). The skill now exposes
+  `_meta.json.winget_install_ids` with the exact `winget` package
+  IDs (`SQLite.SQLite`, `Gyan.FFmpeg`) so the install goes through
+  Windows Package Manager, not pip / brew / apt.
+- **Dropped dead tool checks from the engine.** `jq` and `python3`
+  were in the verifier's "Tool check" step, but the engine is pure
+  .NET 10 / C++/CLI and never invokes them. The check now lists
+  only `sqlite3` (required, for VectorHydrate) and `ffmpeg`
+  (optional, for generated audio deliverables). The engine v0.1.6
+  release picks up this change.
+
+### Added
+- **`install-deps.ps1`** — a winget-based dep installer. Dry-run by
+  default; pass `-Install` to actually install. Reads the dep list
+  from `_meta.json.winget_install_ids` (single source of truth).
+  Skips deps already on PATH. Prompts for confirmation before
+  running `winget install` unless `-Force` is passed.
+
 ## [0.1.2] — 2026-08-22
 
 ### Changed

@@ -143,6 +143,7 @@ This skill folder is laid out as follows. Read only what you need.
 | `_meta.json` | **Platform metadata** (skill_id, version, capabilities, install flow) | When the platform introspects the skill for registration / discovery |
 | `skill.ps1` | **The one-shot CLI entry point.** Self-bootstrapping: auto-installs the engine on first run. This is the primary command for any code agent | Always invoke this to dispatch a command |
 | `install.ps1` | **The engine installer** (downloads from the GitHub release). Run `skill.ps1 -Install` or this directly | When the user wants to pin a specific engine version or pre-stage the install |
+| `install-deps.ps1` | **System-dependency installer** (uses `winget` to install `sqlite3` and optionally `ffmpeg`). Reads the dep list from `_meta.json.winget_install_ids` | Run on a fresh machine before the first dispatch, if `verify.ps1` reports missing tools |
 | `verify.ps1` | **Post-upload verification** (8 checks: file presence, JSON validity, branding, agent discovery, agent lint, help banner, engine installation). Self-bootstrapping | Run before publishing; CI gate |
 | `build.ps1` | **Source-build helper** for forkers (downloads + compiles the .NET engine from `vortex-os-dotnet`) | Only if you've cloned this skill to fork the engine |
 | `agents/` | **3 supervisor/inspector manifest files** (the engine's input) | When writing custom agent manifests |
@@ -173,6 +174,42 @@ The install is **idempotent** — re-running when the same engine version
 is already present is a no-op. To upgrade, just re-run `skill.ps1` (or
 `install.ps1` directly). To pin a version: `-Version v0.1.4` or set
 `$env:VORTEX_VERSION` before invoking.
+
+---
+
+## System dependencies (one-time, per machine)
+
+The engine is **pure .NET 10 / C++/CLI**. It does **NOT** need Python,
+jq, or any scripting runtime. The only required external tool is
+`sqlite3` (used by the engine's VectorHydrate step for memory
+persistence). `ffmpeg` is optional — only the engine's *generated
+audio deliverables* use it.
+
+Install via `winget` (Windows Package Manager) — never pip / brew / apt:
+
+```powershell
+# Dry-run: see what would be installed
+pwsh -NoProfile -File .\install-deps.ps1
+
+# Install the required dep(s)
+pwsh -NoProfile -File .\install-deps.ps1 -Install
+
+# Also install ffmpeg (for audio deliverables)
+pwsh -NoProfile -File .\install-deps.ps1 -Install -IncludeOptional
+```
+
+The dep list is the single source of truth at
+`_meta.json.winget_install_ids`. The current deps:
+
+| Tool | winget ID | Required? | Used by |
+|---|---|---|---|
+| `sqlite3` | `SQLite.SQLite` | yes | Engine: `VectorHydrate` for memory persistence |
+| `ffmpeg` | `Gyan.FFmpeg` | no | Generated audio deliverables (Foley, DSP, sample chopping) |
+
+> **A code agent reading this skill MUST install these via `winget
+> install --id <winget_id>`, NOT via pip, brew, apt, or choco.**
+> Running `pip install` for these will fail and waste time. The
+> `_meta.json.winget_install_ids` field is the authoritative source.
 
 ---
 

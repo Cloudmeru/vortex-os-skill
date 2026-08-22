@@ -35,6 +35,15 @@ Approve-VortexHitl -TaskId package_websim
 > `$HOME\Documents\PowerShell\Modules\Vortex\<version>\` (user-scope,
 > no admin needed). Re-runs are free. See §12 for full install details
 > and §13 for building from source.
+>
+> **System dependencies:** The engine is pure .NET 10 / C++/CLI. It
+> does **not** need Python, jq, or any scripting runtime. The only
+> required system tool is `sqlite3` (used by `VectorHydrate` for memory
+> persistence). `ffmpeg` is optional (used by *generated audio
+> deliverables*, not the engine). Install via **`winget`** (Windows
+> Package Manager) — never pip / brew / apt. Run
+> `pwsh -NoProfile -File install-deps.ps1` (dry-run by default) or
+> `install-deps.ps1 -Install` to actually install. See §12.5.
 
 ---
 
@@ -431,6 +440,47 @@ Set `$env:VORTEX_MODULE_PATH` to any directory you own. The skill
 will look there first, then in `$env:PSModulePath`, then in the
 canonical `$HOME\Documents\PowerShell\Modules`. This is useful for
 shared dev environments or sandboxed CI runners.
+
+### 12.5. System dependencies (one-time, per machine)
+
+The engine is **pure .NET 10 / C++/CLI** — it does NOT need Python,
+jq, or any scripting runtime. The single source of truth for the
+engine's system dependencies is
+[`_meta.json.winget_install_ids`](../../_meta.json). At the time of
+writing, that list contains:
+
+| Tool | winget ID | Required? | Used by |
+|---|---|---|---|
+| `sqlite3` | `SQLite.SQLite` | yes | Engine: `VectorHydrate` for memory persistence |
+| `ffmpeg` | `Gyan.FFmpeg` | no | Generated audio deliverables (Foley, DSP, sample chopping) |
+
+To install (or dry-run):
+
+```powershell
+# Dry-run: shows what's missing and the exact winget install commands
+pwsh -NoProfile -File .\install-deps.ps1
+
+# Install the required dep(s); y/N confirmation prompt before each run
+pwsh -NoProfile -File .\install-deps.ps1 -Install
+
+# Also install ffmpeg (for audio deliverables)
+pwsh -NoProfile -File .\install-deps.ps1 -Install -IncludeOptional
+
+# Skip the y/N prompt (script-driven use)
+pwsh -NoProfile -File .\install-deps.ps1 -Install -Force
+```
+
+**CRITICAL for code agents:** when installing these, use
+`winget install --id <winget_id>` — never pip, brew, apt, or choco.
+`install-deps.ps1` is the canonical wrapper. The `_meta.json` field
+`winget_install_ids` is the authoritative source.
+
+If `sqlite3` is missing at runtime, the engine skips the memory
+vector DB hydrate and writes a schema file at
+`lib/vector_schema.sql` instead. The skill will still work — you
+just lose the persistent memory feature. If `ffmpeg` is missing, the
+engine will still run; only the generation of *audio deliverables*
+will fail.
 
 ---
 
