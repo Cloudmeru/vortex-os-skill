@@ -1,25 +1,27 @@
 ---
 name: VORTEX-OS
 display_name: VORTEX-OS — Native Autonomous Studio Command Center
-version: 0.1.1
+version: 0.1.2
 description: |
-  VORTEX-OS is a Hierarchical Autonomous Orchestration Engine designed to treat
-  AI agency as a high-stakes, closed-loop corporate operation. Built exclusively
-  to maximize the native capabilities of the MiniMax ecosystem, VORTEX-OS
-  decouples strategic planning from operational labor. It enables you to ship
-  complex, multi-modal projects — such as internal web apps, interactive
-  sandboxed code, foley sound design, and procedural video — without ever
-  relying on fragile external websites.
+  VORTEX-OS is a self-bootstrapping PowerShell skill that drives the
+  [Cloudmeru/vortex-os-dotnet](https://github.com/Cloudmeru/vortex-os-dotnet)
+  .NET 10 C++/CLI engine to orchestrate multi-agent creative production
+  pipelines (writing + audio + code + video + image) on the MiniMax
+  ecosystem. Use it for VibeOS modules, WebSims, narrative universes
+  (When Ocean Meets Sky, Book of the Fading Age), Hailuo video
+  pipelines, ffmpeg audio, and any cross-domain project that needs
+  continuity enforcement + audit trails + Human-in-the-Loop approval.
 
-  TRIGGER when: building VibeOS modules, WebSims, interactive apps, narrative
-  series, native Hailuo video pipelines, local ffmpeg audio processing, lore
-  universe management (When Ocean Meets Sky, Book of the Fading Age), complex
-  internal app scaffolding, procedural media generation entirely in-house with
-  no external API keys.
+  TRIGGER when: multi-agent orchestration, hierarchical task
+  decomposition (T0→T3), MiniMax native media generation,
+  continuity-enforced creative work, auditable LLM pipelines,
+  HITL-gated high-stakes actions, narrative-series / lore-universe
+  management, procedural media generation at factory scale, internal
+  MiniMax app scaffolding.
 
-  DO NOT TRIGGER when: simple one-line code requests, pure chat / Q&A tasks,
-  single-file edits with no cross-domain coordination, read-only research
-  questions.
+  DO NOT TRIGGER when: simple one-line code questions, pure chat /
+  Q&A, single-file edits with no cross-domain coordination, read-only
+  research, or tasks with no clear objective.
 author: MiniMax Agent
 license: MIT
 category: automation
@@ -27,73 +29,47 @@ subcategory: multi-agent-orchestration
 entry_point: skill.ps1
 ---
 
-# VORTEX-OS: The Autonomous Operating System for Creative Production
+# VORTEX-OS — Native Autonomous Studio Command Center
 
-**VORTEX-OS** is a **Hierarchical Autonomous Orchestration Engine** designed to treat AI agency as a high-stakes, closed-loop corporate operation. Built exclusively to maximize the native capabilities of the MiniMax ecosystem, VORTEX-OS decouples strategic planning from operational labor.
+> **Stop managing tasks. Start commanding a native digital workforce.**
 
-**VORTEX-OS turns your chat interface into a factory. You define the mission; the swarm handles the rest.**
+VORTEX-OS is a **self-bootstrapping PowerShell skill** that drives the
+[Cloudmeru/vortex-os-dotnet](https://github.com/Cloudmeru/vortex-os-dotnet)
+.NET 10 C++/CLI engine to orchestrate **multi-agent, multi-domain
+creative production pipelines** end-to-end on the MiniMax ecosystem —
+writing, audio, code, video, and image, all in-house, with full audit
+trails and Human-in-the-Loop approval gates.
 
----
-
-## THE ARCHITECTURE OF A DIGITAL WORKFORCE
-
-VORTEX-OS utilizes a rigid, 4-tier chain of command to eliminate the "Context Rot" and "Infinite Loop" failures common in standard agentic systems:
-
-* **General Manager (The Apex)** — Receives your master objective and performs a deep decomposition, creating a master plan that ensures your vision is respected throughout the entire lifecycle.
-* **Store Supervisors (Domain Strategy)** — Strategic domain managers that maintain your "Golden Path" project files. They know exactly which specialized swarm is required for your request and manage the resource allocation.
-* **Shift Supervisors (Tactical QA)** — The heartbeat of the system. These agents act as a brick wall between your vision and "The Crew." They enforce your universe's physical laws (The Continuity Engine), perform automated code-sandbox testing, and reject any generation that fails to meet your high-fidelity standards.
-* **The Crew (Specialized Workers)** — Tiered, specialized agents — from `coder.typescript` to `media.native` — that execute the granular labor directly utilizing MiniMax's native APIs.
-
----
-
-## UNMATCHED GOVERNANCE & SAFETY
-
-* **The Governance Inspector** — An always-on auditing tier that monitors token velocity. If a swarm hits a recursive loop or a cost-spike, the Inspector pulls the emergency brake instantly, protecting your compute budget.
-* **Deep-Sleep HITL (Human-In-The-Loop)** — When a task reaches a "High-Stakes" threshold (like compiling a complex UI package), the system automatically suspends its state to disk, performs a "Deep Sleep," and pages you for explicit approval before proceeding.
-* **Self-Healing Prompt Optimizer** — If an agent hallucinates or violates a constraint, VORTEX-OS rewrites its own core instructions to ensure the failure mode is permanently eliminated.
+The first time the skill runs, it auto-installs the engine (downloads 4
+files from the public `vortex-os-dotnet` release, places them in a
+user-scope PowerShell module folder, no admin needed). Subsequent runs
+are instant. The install is **idempotent**.
 
 ---
 
-## 100% IN-HOUSE, NATIVE EXECUTION
-
-VORTEX-OS is designed for absolute internal autonomy:
-
-* **Native MiniMax Media** — Triggers internal image generation, Hailuo video generation, and speech/foley generation natively. No external API keys required.
-* **Local Audio Processing** — Delegates complex sound manipulation, sample chopping, and DSP effects to local ffmpeg and Python audio scripts within the sandbox. No external music sites.
-* **Internal App Scaffolding** — Brainstorms, architects, and writes the code for complex digital environments (like VibeOS modules) meant to run entirely within the MiniMax ecosystem environment.
-
----
-
-## USAGE
-
-The skill exposes a one-shot CLI (`skill.ps1`) that talks to the .NET 10
-C++/CLI engine. **The engine is NOT bundled** — it is downloaded from the
-public GitHub release of [Cloudmeru/vortex-os-dotnet](https://github.com/Cloudmeru/vortex-os-dotnet)
-the first time the skill runs, and installed to a user-scope PowerShell
-module folder. **No admin / system changes are required**, and no
-authentication is needed. See `INSTRUCTIONS.md` for the LLM-facing
-walkthrough and `COMPATIBILITY.md` for the list of supported code agents.
-
-> **Engine sources:** The C++/CLI source lives in the companion repo
-> [Cloudmeru/vortex-os-dotnet](https://github.com/Cloudmeru/vortex-os-dotnet).
-> The skill does NOT bundle a prebuilt copy; it downloads the engine at
-> install time so the version stays in lockstep with the latest release.
-
-### One-shot CLI (self-bootstrapping)
+## Quick Start
 
 ```powershell
-# Run a command — the engine auto-installs on the first invocation
-pwsh -NoProfile -File skill.ps1 --agents-discover
-pwsh -NoProfile -File skill.ps1 --dispatch-master my_project\objective.md
-pwsh -NoProfile -File skill.ps1 --hitl-approve package_websim
+# 1. Clone the skill (any code agent, any Windows host with PowerShell 7+)
+#    OR just point at the existing clone:
+cd path\to\vortex-os-skill
 
-# Force a fresh engine install
-pwsh -NoProfile -File skill.ps1 -Install --version
-pwsh -NoProfile -File install.ps1                          # manual install
-pwsh -NoProfile -File install.ps1 -Version v0.1.4          # pin a specific engine version
+# 2. Verify the package is ready (downloads the engine on first run)
+pwsh -NoProfile -File .\verify.ps1
 
-# After the first run, the engine is installed in user-scope. From any
-# PowerShell 7+ session:
+# 3. Discover agents + dispatch your first master objective
+pwsh -NoProfile -File .\skill.ps1 --agents-discover
+# Write your objective to a file, then:
+pwsh -NoProfile -File .\skill.ps1 --dispatch-master my_project\objective.md
+
+# 4. When the engine pages you for HITL approval:
+pwsh -NoProfile -File .\skill.ps1 --hitl-approve <task_id>
+```
+
+After the first install, the engine is available directly as a
+PowerShell module from any session:
+
+```powershell
 Import-Module Vortex
 Get-VortexAgent
 Get-VortexHitlPending
@@ -101,75 +77,137 @@ Approve-VortexHitl -TaskId package_websim
 Test-VortexPackage
 ```
 
-### What the install does (for code agents)
+For the **complete operator walkthrough** (HITL protocol, Continuity
+Engine handling, error codes, the 4-tier mental model, the 8 contract
+invariants, end-to-end example), read
+[`references/INSTRUCTIONS.md`](./references/INSTRUCTIONS.md).
 
-The first invocation of `skill.ps1` will:
-1. Look for a `Vortex\<version>\Vortex.psd1` in `$env:PSModulePath`, `$env:VORTEX_MODULE_PATH`, and the canonical `$HOME\Documents\PowerShell\Modules`.
-2. If none is found, run `install.ps1`, which:
-   * Calls `GET https://api.github.com/repos/Cloudmeru/vortex-os-dotnet/releases/latest` (unauthenticated; 60 req/hr/IP limit, plenty for one install).
-   * Downloads `Vortex.dll`, `Vortex.psm1`, `Vortex.psd1`, `ijwhost.dll` from the release's `assets[].browser_download_url`.
-   * Places them in `$HOME\Documents\PowerShell\Modules\Vortex\<version>\` (or the first writable PSModulePath entry on machines with OneDrive-redirected Documents).
-3. Set `$env:VORTEX_SKILL_ROOT` to the skill folder so the engine knows where `agents/` + `state/` live.
-4. Import the module and dispatch the command.
+For the **user-facing overview** (install flow, command reference,
+4-tier diagram, license), read [`README.md`](./README.md).
 
-The install is **idempotent** — re-running it when the same engine version is already present is a no-op. To upgrade, just re-run `install.ps1` (or `skill.ps1 -Install`).
-
-### Build the engine from source (advanced / forkers only)
-
-If you cloned this skill to fork the engine, you can rebuild the C++/CLI
-binaries from the upstream source:
-
-```powershell
-pwsh -NoProfile -File build.ps1                 # download + build the .NET repo
-pwsh -NoProfile -File build.ps1 -DotnetSrc 'C:\path\to\checkouts\vortex-os-dotnet'
-```
-
-See `INSTRUCTIONS.md` §13 for details.
+For **multi-code-agent support** (minimax code, hermes, aider,
+continue.dev, cline, Claude Code, GitHub Copilot Coding Agent) and
+the 4-line install contract, read [`COMPATIBILITY.md`](./COMPATIBILITY.md).
 
 ---
 
-## TRIGGER CONDITIONS
+## Trigger Conditions
 
 **Use this skill when the user requests:**
-- Building VibeOS modules, WebSims, interactive apps, narrative series
-- Managing multi-stage workflows across writing, audio, code, and video domains using native MiniMax engines
-- Automating multi-agent orchestration with universe-constrained creativity
-- Native Hailuo video generation and MiniMax image generation pipelines
-- Local ffmpeg audio processing, sample manipulation, and Foley synthesis
-- Internal app scaffolding for the MiniMax ecosystem
-- Long-running creative projects requiring continuity enforcement (lore universes, visual novels, games)
-- Tasks requiring auditable decision-making with full audit trails
-- High-stakes deployments that need Human-in-the-Loop approval
-- Self-healing pipelines that recover from LLM drift
-- Procedural media generation at factory scale, entirely in-house
+
+- **Multi-disciplinary projects** that span writing + audio + code +
+  video + image in one pipeline
+- **Hierarchical task decomposition** — T0 General Manager → T1 Store
+  Supervisor → T2 Shift Supervisor → T3 specialized workers
+- **Universe-constrained creative work** — continuity enforcement for
+  lore, character consistency, era rules, physics rules
+- **Native MiniMax media generation** — Hailuo video, minimax-music
+  audio, minimax-image — without external API keys
+- **Auditable LLM pipelines** where every decision must be traceable
+  in `memory\audit.jsonl`
+- **High-stakes deployments** that require Human-in-the-Loop approval
+  before finalization (e.g. packaging a WebSim, publishing a
+  deliverable, writing to `deliverables\`)
+- **Self-healing prompts** that recover from LLM drift via the
+  Self-Healing Prompt Optimizer
+- **VibeOS modules, WebSims, narrative series, internal app
+  scaffolding** for the MiniMax ecosystem
+- **Local ffmpeg audio** — Foley, sample chopping, DSP — inside a
+  sandbox
+- **Code generation** (TypeScript, Python) inside the engine's sandbox
+- **Procedural media generation** at factory scale, entirely in-house
+- **Long-running creative projects** that need persistence + replay
+  (Golden Path templates)
 
 **Do NOT use this skill for:**
-- Simple one-line code questions
-- Pure chat / Q&A tasks
-- Single-file edits with no cross-domain coordination
-- Read-only research questions
+
+- Simple one-line code questions → just answer
+- Pure chat / Q&A → just chat
+- Single-file edits with no cross-domain coordination → use a single tool
+- Read-only research → use a web search
+- Tasks with no clear objective → ask the user for clarification first
 
 ---
 
-## THE 8 CONTRACT INVARIANTS
+## Skill Anatomy
 
-Every agent must satisfy:
+This skill folder is laid out as follows. Read only what you need.
 
-- **I1 — Idempotence:** Re-running with identical input produces byte-identical output.
-- **I2 — Resource Honesty:** Declared resources match actual consumption (±20%).
-- **I3 — Write Containment:** Never writes outside its declared `writes[]`.
-- **I4 — Read Containment:** Never reads outside its declared `reads[]`.
-- **I5 — Sealed Envelope:** Output strictly conforms to the standard JSON schema.
-- **I6 — Retry Honesty:** Never loops internally — orchestrator drives retries.
-- **I7 — Secret Hygiene:** No secrets in logs; all secrets declared.
-- **I8 — Metric Truthfulness:** Cost/token metrics are actual, not estimated.
+| File / Folder | Purpose | When to read |
+|---|---|---|
+| `SKILL.md` (this file) | Lean entry point: **what + when + how to invoke** | Always, on every trigger (~5 KB) |
+| `references/INSTRUCTIONS.md` | **Operator playbook** — full walkthrough, HITL protocol, Continuity Engine handling, error codes, 4-tier mental model, the 8 contract invariants, end-to-end example | When you need the details (~20 KB, loaded on demand) |
+| `README.md` | **User-facing landing page** — install flow, full command reference, 4-tier diagram, license | When the user is new to VORTEX-OS or asks for the public overview |
+| `COMPATIBILITY.md` | **Multi-code-agent support** matrix + the 4-line install contract | When a code agent (minimax code, hermes, etc.) needs to know how to drive the skill |
+| `CHANGELOG.md` | Per-version changes | When the user asks "what changed in v0.1.2?" |
+| `_meta.json` | **Platform metadata** (skill_id, version, capabilities, install flow) | When the platform introspects the skill for registration / discovery |
+| `skill.ps1` | **The one-shot CLI entry point.** Self-bootstrapping: auto-installs the engine on first run. This is the primary command for any code agent | Always invoke this to dispatch a command |
+| `install.ps1` | **The engine installer** (downloads from the GitHub release). Run `skill.ps1 -Install` or this directly | When the user wants to pin a specific engine version or pre-stage the install |
+| `verify.ps1` | **Post-upload verification** (8 checks: file presence, JSON validity, branding, agent discovery, agent lint, help banner, engine installation). Self-bootstrapping | Run before publishing; CI gate |
+| `build.ps1` | **Source-build helper** for forkers (downloads + compiles the .NET engine from `vortex-os-dotnet`) | Only if you've cloned this skill to fork the engine |
+| `agents/` | **3 supervisor/inspector manifest files** (the engine's input) | When writing custom agent manifests |
 
 ---
 
-## LICENSE
+## How the install works (one-time, on first run)
+
+`skill.ps1` is self-bootstrapping. The first invocation:
+
+1. Searches `$env:VORTEX_MODULE_PATH`, `$env:PSModulePath`, and the
+   canonical `$HOME\Documents\PowerShell\Modules` for an installed
+   `Vortex\<version>\Vortex.psd1`.
+2. If not found, runs `install.ps1`, which:
+   - Calls `GET https://api.github.com/repos/Cloudmeru/vortex-os-dotnet/releases/latest`
+     (unauthenticated; 60 req/hr per IP, fine for one install).
+   - Downloads `Vortex.dll`, `Vortex.psm1`, `Vortex.psd1`,
+     `ijwhost.dll` from the release's `assets[].browser_download_url`.
+   - Places them in the first writable user-scope module folder
+     (canonical: `$HOME\Documents\PowerShell\Modules\Vortex\<version>\`).
+     Handles OneDrive-redirected `Documents` folders gracefully by
+     probing each PSModulePath entry with a sentinel subdir.
+3. Sets `$env:VORTEX_SKILL_ROOT` to the skill folder so the engine
+   finds the skill's `agents/`, `state/`, `memory/`, `deliverables/`.
+4. Imports the module and dispatches the command.
+
+The install is **idempotent** — re-running when the same engine version
+is already present is a no-op. To upgrade, just re-run `skill.ps1` (or
+`install.ps1` directly). To pin a version: `-Version v0.1.4` or set
+`$env:VORTEX_VERSION` before invoking.
+
+---
+
+## Command reference (one-liner)
+
+For the full table with 20+ subcommands, see [`README.md`](./README.md).
+The most common invocations:
+
+| Goal | Command |
+|---|---|
+| List available agents | `pwsh -NoProfile -File .\skill.ps1 --agents-discover` |
+| Lint all agents | `pwsh -NoProfile -File .\skill.ps1 --agents-lint --all` |
+| Run a project | `pwsh -NoProfile -File .\skill.ps1 --dispatch-master my_project\objective.md` |
+| Check HITL queue | `pwsh -NoProfile -File .\skill.ps1 --hitl-status` |
+| Approve / deny a HITL halt | `pwsh -NoProfile -File .\skill.ps1 --hitl-approve <task_id>` / `--hitl-deny <task_id>` |
+| View audit log | `pwsh -NoProfile -File .\skill.ps1 --audit-trail` |
+| Force engine reinstall | `pwsh -NoProfile -File .\skill.ps1 -Install` |
+| Engine version | `pwsh -NoProfile -File .\skill.ps1 --version` |
+
+---
+
+## Engine source
+
+The C++/CLI engine that powers this skill lives in a separate repo:
+**[Cloudmeru/vortex-os-dotnet](https://github.com/Cloudmeru/vortex-os-dotnet)**.
+Public releases there are what `install.ps1` downloads. If you need to
+patch / fork the engine, see `references/INSTRUCTIONS.md` §13 (build
+from source) and the `[Cloudmeru/vortex-os-dotnet README](https://github.com/Cloudmeru/vortex-os-dotnet)` itself.
+
+---
+
+## License
 
 MIT
 
-## AUTHOR
+## Author
 
 MiniMax Agent

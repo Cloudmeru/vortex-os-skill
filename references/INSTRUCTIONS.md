@@ -2,6 +2,8 @@
 
 > **For LLMs and operators using VORTEX-OS**
 > This is the complete operational contract: when to invoke it, how to invoke it, how to handle every event, how to recover from every error, and what the boundaries are.
+>
+> **Where this lives:** This file was moved from `INSTRUCTIONS.md` to `references/INSTRUCTIONS.md` in v0.1.2 to follow the Mavis/Claude skill convention: keep `SKILL.md` lean (always loaded on trigger) and move the deep operator playbook to `references/` (loaded on demand). The original 14-section structure is preserved; only the path changed. The skill's `_meta.json` `llm_instructions` field was updated to match.
 
 ---
 
@@ -74,7 +76,7 @@ Set-Content -Path "$env:TEMP\vortex\objective.md" -Value @"
 pwsh -NoProfile -File skill.ps1 --dispatch-master "$env:TEMP\vortex\objective.md"
 ```
 
-Or, from a persistent PS7+ session:
+Or, from a persistent PowerShell 7+ session:
 ```powershell
 Import-Module Vortex
 Invoke-Vortex --dispatch-master "$env:TEMP\vortex\objective.md"

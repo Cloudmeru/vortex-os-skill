@@ -57,7 +57,7 @@
   "entry_point": "skill.ps1",
   "files": {
     "instruction_brain": "SKILL.md",
-    "llm_instructions": "INSTRUCTIONS.md",
+    "llm_instructions": "references/INSTRUCTIONS.md",
     "platform_metadata": "_meta.json",
     "post_upload_verify": "verify.ps1",
     "primary_entry": "skill.ps1",
@@ -163,9 +163,9 @@
       "Procedural media generation (audio, narrative, code, video) at factory scale, entirely in-house with no external API keys"
     ]
   },
-  "updated_at": 1787376137081,
+  "updated_at": 1787380000000,
   "verification_date": "2026-08-22",
-  "verification_status": "Clean package verified: skill scripts + agents + docs present, JSON valid, install.ps1 downloads + installs engine from public release, all 8 verification checks pass on a fresh install.",
+  "verification_status": "Clean package verified: skill scripts + agents + docs present, JSON valid, install.ps1 downloads + installs engine from public release, all 8 verification checks pass on a fresh install. Operator playbook moved to references/INSTRUCTIONS.md following the Mavis/Claude 3-level loading convention; SKILL.md kept lean for always-on trigger detection.",
   "verified": true,
-  "version": "0.1.1"
+  "version": "0.1.2"
 }

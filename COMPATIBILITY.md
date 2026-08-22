@@ -93,7 +93,7 @@ Returns `LINT_OK: <path>` for each agent. Exit 0.
 The dispatcher expects a master objective as a file path. The agent
 should write the user's natural-language objective to a temp file
 (any path the agent can read back) and pass that path to
-`--dispatch-master`. See `INSTRUCTIONS.md` §2 for a complete example.
+`--dispatch-master`. See `references/INSTRUCTIONS.md` §2 for a complete example.
 
 ### Step 4 — dispatch
 

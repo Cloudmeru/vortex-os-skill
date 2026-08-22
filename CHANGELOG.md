@@ -4,6 +4,36 @@ All notable changes to the VORTEX-OS skill package are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.1.2] — 2026-08-22
+
+### Changed
+- **Skill structure follows the Mavis/Claude 3-level loading convention.**
+  `INSTRUCTIONS.md` (the 19 KB operator playbook) moved to
+  `references/INSTRUCTIONS.md` so the agent can load it on demand
+  instead of every time the skill triggers. `SKILL.md` is now the
+  lean entry point with a clear "Skill Anatomy" map pointing at every
+  other file and its purpose.
+- `SKILL.md` frontmatter description rewritten to be more
+  discoverable: more trigger words (multi-agent orchestration,
+  hierarchical task decomposition, MiniMax native media, continuity
+  enforcement, auditable LLM, HITL, narrative series, procedural
+  media), tighter scope statement, and clearer do-not-trigger list.
+- Added a **Quick Start** callout at the top of `SKILL.md` so a code
+  agent (minimax code, hermes, etc.) can fire `verify.ps1` and
+  `skill.ps1 --agents-discover` without reading the rest of the file.
+- Added a **Skill Anatomy** table mapping every file in the repo to
+  its purpose + when to read it. Cross-references `README.md` (user
+  overview) and `COMPATIBILITY.md` (multi-code-agent contract).
+- Added a **Command reference** one-liner table so the agent doesn't
+  have to dig through `README.md` for the common commands.
+
+### Migration notes
+- Existing agents / scripts that read `INSTRUCTIONS.md` directly
+  should update their path to `references/INSTRUCTIONS.md`. The
+  `_meta.json.llm_instructions` field already points to the new path.
+- The 14-section structure of the operator playbook is unchanged —
+  only the path moved. No content was deleted or rearranged.
+
 ## [0.1.1] — 2026-08-22
 
 ### Changed (BREAKING for the bundled-engine layout)

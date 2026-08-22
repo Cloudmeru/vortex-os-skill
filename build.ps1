@@ -6,7 +6,7 @@
 # install path. For routine use, just run `skill.ps1` — it self-bootstraps by
 # downloading the latest prebuilt engine from the public GitHub release of
 # Cloudmeru/vortex-os-dotnet. See `install.ps1` for the download flow, and
-# `INSTRUCTIONS.md` §12 for details.
+# `references/INSTRUCTIONS.md` §12 for details.
 #
 # When do you need this?
 #   * You cloned this skill to fork the engine and need to test a patch.

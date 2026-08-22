@@ -54,11 +54,15 @@ Approve-VortexHitl -TaskId package_websim
 
 ```
 vortex-os-skill/
-├── SKILL.md                              ← ★ LLM instruction brain
-├── INSTRUCTIONS.md                        ← ★ LLM operator knowledge base
+├── SKILL.md                              ← ★ LLM instruction brain (lean, always-on)
 ├── README.md                              ← (this file)
 ├── COMPATIBILITY.md                       ← Supported code agents + install patterns
 ├── _meta.json                             ← Platform metadata
+├── CHANGELOG.md                           ← Per-version changes
+├── LICENSE                                ← MIT
+│
+├── references/
+│   └── INSTRUCTIONS.md                    ← ★ LLM operator knowledge base (deep dive, on-demand)
 │
 ├── skill.ps1                              ← ★ One-shot CLI entry point (self-bootstrapping)
 ├── verify.ps1                             ← ★ Post-upload verification entry point
@@ -70,10 +74,17 @@ vortex-os-skill/
 │   ├── supervisor.shift.json
 │   └── inspector.governance.json
 │
-├── LICENSE                                ← MIT
-│
 └── state/  swarms/  tasks/  memory/  deliverables/   ← Runtime (created on first run)
 ```
+
+The skill follows the Mavis/Claude 3-level loading convention:
+- `SKILL.md` (this file) is **lean** (~10 KB) so the agent can detect +
+  decide to trigger on it without bloating its context.
+- `references/INSTRUCTIONS.md` (~20 KB) is the **operator playbook** —
+  loaded on demand when the agent needs the full walkthrough, the
+  HITL protocol, the error code table, the 4-tier mental model, etc.
+- `README.md` is the **user-facing overview** (install flow, command
+  reference, license).
 
 ---
 
