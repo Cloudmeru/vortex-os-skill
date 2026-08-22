@@ -1,7 +1,7 @@
 ---
 name: VORTEX-OS
 display_name: VORTEX-OS — Native Autonomous Studio Command Center
-version: 0.1.0
+version: 0.1.1
 description: |
   VORTEX-OS is a Hierarchical Autonomous Orchestration Engine designed to treat
   AI agency as a high-stakes, closed-loop corporate operation. Built exclusively
@@ -66,57 +66,65 @@ VORTEX-OS is designed for absolute internal autonomy:
 
 ## USAGE
 
-The skill ships a one-shot CLI (`skill.ps1`) that talks to the bundled
-`Vortex.dll` engine. The engine is a **.NET 10 C++/CLI class library**
-loaded by PowerShell 7+ via `Add-Type`. See `INSTRUCTIONS.md` for the
-LLM-facing walkthrough.
+The skill exposes a one-shot CLI (`skill.ps1`) that talks to the .NET 10
+C++/CLI engine. **The engine is NOT bundled** — it is downloaded from the
+public GitHub release of [Cloudmeru/vortex-os-dotnet](https://github.com/Cloudmeru/vortex-os-dotnet)
+the first time the skill runs, and installed to a user-scope PowerShell
+module folder. **No admin / system changes are required**, and no
+authentication is needed. See `INSTRUCTIONS.md` for the LLM-facing
+walkthrough and `COMPATIBILITY.md` for the list of supported code agents.
 
 > **Engine sources:** The C++/CLI source lives in the companion repo
 > [Cloudmeru/vortex-os-dotnet](https://github.com/Cloudmeru/vortex-os-dotnet).
-> A prebuilt `Vortex.dll` is bundled in this skill so the one-shot CLI
-> works out of the box.
+> The skill does NOT bundle a prebuilt copy; it downloads the engine at
+> install time so the version stays in lockstep with the latest release.
 
-### One-shot CLI
+### One-shot CLI (self-bootstrapping)
 
 ```powershell
-# Run a command
+# Run a command — the engine auto-installs on the first invocation
 pwsh -NoProfile -File skill.ps1 --agents-discover
 pwsh -NoProfile -File skill.ps1 --dispatch-master my_project\objective.md
 pwsh -NoProfile -File skill.ps1 --hitl-approve package_websim
 
-# Or dot-source the entry point in a persistent PS7+ session
-. .\skill.ps1                       # not needed; just import the module:
-Import-Module .\Vortex.psd1
+# Force a fresh engine install
+pwsh -NoProfile -File skill.ps1 -Install --version
+pwsh -NoProfile -File install.ps1                          # manual install
+pwsh -NoProfile -File install.ps1 -Version v0.1.4          # pin a specific engine version
+
+# After the first run, the engine is installed in user-scope. From any
+# PowerShell 7+ session:
+Import-Module Vortex
 Get-VortexAgent
 Get-VortexHitlPending
 Approve-VortexHitl -TaskId package_websim
 Test-VortexPackage
 ```
 
-### Install the engine from PowerShell Gallery (future, when published)
+### What the install does (for code agents)
 
-Once the VORTEX-OS .NET engine ships to PSGallery (target: a future
-v0.2.x release), the skill can use the gallery module instead of the
-bundled `Vortex.dll`. To switch:
+The first invocation of `skill.ps1` will:
+1. Look for a `Vortex\<version>\Vortex.psd1` in `$env:PSModulePath`, `$env:VORTEX_MODULE_PATH`, and the canonical `$HOME\Documents\PowerShell\Modules`.
+2. If none is found, run `install.ps1`, which:
+   * Calls `GET https://api.github.com/repos/Cloudmeru/vortex-os-dotnet/releases/latest` (unauthenticated; 60 req/hr/IP limit, plenty for one install).
+   * Downloads `Vortex.dll`, `Vortex.psm1`, `Vortex.psd1`, `ijwhost.dll` from the release's `assets[].browser_download_url`.
+   * Places them in `$HOME\Documents\PowerShell\Modules\Vortex\<version>\` (or the first writable PSModulePath entry on machines with OneDrive-redirected Documents).
+3. Set `$env:VORTEX_SKILL_ROOT` to the skill folder so the engine knows where `agents/` + `state/` live.
+4. Import the module and dispatch the command.
+
+The install is **idempotent** — re-running it when the same engine version is already present is a no-op. To upgrade, just re-run `install.ps1` (or `skill.ps1 -Install`).
+
+### Build the engine from source (advanced / forkers only)
+
+If you cloned this skill to fork the engine, you can rebuild the C++/CLI
+binaries from the upstream source:
 
 ```powershell
-pwsh -NoProfile -File build.ps1 psgallery     # installs Vortex from PSGallery
-Remove-Item .\Vortex.dll, .\Vortex.psm1, .\Vortex.psd1, .\ijwhost.dll
-Import-Module Vortex                          # gallery module is picked up
+pwsh -NoProfile -File build.ps1                 # download + build the .NET repo
+pwsh -NoProfile -File build.ps1 -DotnetSrc 'C:\path\to\checkouts\vortex-os-dotnet'
 ```
 
-### Build the engine from source
-
-If you cloned this skill to patch the engine, rebuild `Vortex.dll` from
-the upstream source:
-
-```powershell
-pwsh -NoProfile -File build.ps1
-```
-
-This downloads the C++/CLI source from `vortex-os-dotnet`, compiles it
-with `cl /clr:netcore`, and copies the artifacts back next to the
-skill's `skill.ps1`.
+See `INSTRUCTIONS.md` §13 for details.
 
 ---
 

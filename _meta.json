@@ -62,9 +62,33 @@
     "post_upload_verify": "verify.ps1",
     "primary_entry": "skill.ps1",
     "user_docs": "README.md",
-    "engine": "Vortex.dll",
-    "engine_module": "Vortex.psm1",
-    "engine_manifest": "Vortex.psd1"
+    "code_agent_compat": "COMPATIBILITY.md",
+    "installer": "install.ps1",
+    "source_build_helper": "build.ps1"
+  },
+  "install": {
+    "self_bootstrap": true,
+    "engine_source": "https://github.com/Cloudmeru/vortex-os-dotnet/releases/latest",
+    "engine_files": [
+      "Vortex.dll",
+      "Vortex.psm1",
+      "Vortex.psd1",
+      "ijwhost.dll"
+    ],
+    "engine_install_scope": "CurrentUser",
+    "engine_install_path_default": "$HOME\\Documents\\PowerShell\\Modules\\Vortex\\<version>",
+    "engine_install_path_override": "$env:VORTEX_MODULE_PATH",
+    "elevation_required": false,
+    "auth_required": false,
+    "psgallery_fallback": "Install-Module -Name Vortex -Scope CurrentUser (when published)",
+    "flow": [
+      "User runs `pwsh -NoProfile -File skill.ps1 <args>` from the skill folder.",
+      "skill.ps1 searches $env:VORTEX_MODULE_PATH, $env:PSModulePath, and $HOME\\Documents\\PowerShell\\Modules for an installed Vortex.<version>\\Vortex.psd1.",
+      "If not found, skill.ps1 calls install.ps1, which downloads the 4 engine files from the public GitHub release of Cloudmeru/vortex-os-dotnet.",
+      "install.ps1 places the files in the first writable user-scope module folder (canonical: $HOME\\Documents\\PowerShell\\Modules\\Vortex\\<version>\\).",
+      "skill.ps1 sets $env:VORTEX_SKILL_ROOT to the skill folder so the engine finds agents/ + state/.",
+      "skill.ps1 imports the module and dispatches the command. Exit code from the engine is exposed via Get-VortexLastExitCode and used as the script's exit code."
+    ]
   },
   "interface": {
     "args_format": "space-separated",
@@ -139,9 +163,9 @@
       "Procedural media generation (audio, narrative, code, video) at factory scale, entirely in-house with no external API keys"
     ]
   },
-  "updated_at": 1787374115780,
+  "updated_at": 1787376137081,
   "verification_date": "2026-08-22",
-  "verification_status": "Clean package verified: all engine modules present, syntax valid, JSON valid, agents discoverable & lint-clean, native branding validated.",
+  "verification_status": "Clean package verified: skill scripts + agents + docs present, JSON valid, install.ps1 downloads + installs engine from public release, all 8 verification checks pass on a fresh install.",
   "verified": true,
-  "version": "0.1.0"
+  "version": "0.1.1"
 }

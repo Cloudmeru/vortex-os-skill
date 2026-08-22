@@ -18,17 +18,21 @@ pwsh -NoProfile -File .\skill.ps1 --hitl-approve <task_id>  # greenlight it
 pwsh -NoProfile -File .\skill.ps1 --audit-trail      # what just happened?
 
 # Or, in a persistent PS7+ session (loads once, sticks around):
-Import-Module .\Vortex.psd1
+Import-Module Vortex
 Get-VortexAgent
 Get-VortexHitlPending
 Approve-VortexHitl -TaskId package_websim
 ```
 
-> **Engine sources:** The C++/CLI engine that powers these cmdlets lives in
-> [Cloudmeru/vortex-os-dotnet](https://github.com/Cloudmeru/vortex-os-dotnet).
-> The skill bundles a prebuilt `Vortex.dll` so the one-shot CLI works
-> out of the box. See §12 for the PSGallery install path and §13 for
-> building from source.
+> **Engine acquisition:** The C++/CLI engine that powers these cmdlets
+> lives in [Cloudmeru/vortex-os-dotnet](https://github.com/Cloudmeru/vortex-os-dotnet).
+> The skill does **not** bundle the engine. The first time `skill.ps1`
+> or `verify.ps1` runs, it downloads the 4 engine files
+> (`Vortex.dll` + `Vortex.psm1` + `Vortex.psd1` + `ijwhost.dll`) from
+> the public GitHub release of that repo and installs them to
+> `$HOME\Documents\PowerShell\Modules\Vortex\<version>\` (user-scope,
+> no admin needed). Re-runs are free. See §12 for full install details
+> and §13 for building from source.
 
 ---
 
@@ -53,8 +57,9 @@ Approve-VortexHitl -TaskId package_websim
 ## 2. The Invocation Pattern
 
 The skill exposes `skill.ps1` as the primary entry point. Under the hood
-it loads `Vortex.psm1` which `Add-Type`s the C++/CLI class library
-`Vortex.dll` into PowerShell 7+'s existing .NET 10 CLR.
+it locates the Vortex PowerShell module (downloading + installing it on
+first run) and `Add-Type`s the C++/CLI class library `Vortex.dll` into
+PowerShell 7+'s existing .NET 10 CLR.
 
 ### Step 1 — Write the master objective to a file
 ```powershell
@@ -71,7 +76,7 @@ pwsh -NoProfile -File skill.ps1 --dispatch-master "$env:TEMP\vortex\objective.md
 
 Or, from a persistent PS7+ session:
 ```powershell
-Import-Module .\Vortex.psd1
+Import-Module Vortex
 Invoke-Vortex --dispatch-master "$env:TEMP\vortex\objective.md"
 ```
 
@@ -354,45 +359,98 @@ When declining, explain to the user that VORTEX-OS is built for multi-disciplina
 
 ---
 
-## 12. Engine Installation (PSGallery, future)
+## 12. Engine Installation (download from GitHub release, user-scope)
 
-The C++/CLI engine that powers VORTEX-OS will eventually be published to
-the PowerShell Gallery as the `Vortex` module. Once published, you can
-opt to use the gallery version instead of the bundled binaries:
+The C++/CLI engine that powers VORTEX-OS is built and published at
+[Cloudmeru/vortex-os-dotnet](https://github.com/Cloudmeru/vortex-os-dotnet).
+The skill does **not** bundle the engine — it downloads the 4 engine
+files (`Vortex.dll`, `Vortex.psm1`, `Vortex.psd1`, `ijwhost.dll`) from
+the public release of that repo and installs them to a PowerShell
+**user-scope** module folder. **No admin / system changes are required.**
 
-```powershell
-# Install the engine from PSGallery (PowerShell 7+ Core required)
-Install-Module -Name Vortex -Scope CurrentUser
-
-# Remove the bundled engine so the skill picks up the gallery one
-Remove-Item .\Vortex.dll, .\Vortex.psm1, .\Vortex.psd1, .\ijwhost.dll
-```
-
-Or, more conveniently, use the helper:
+### Default install flow (self-bootstrapping, zero config)
 
 ```powershell
-pwsh -NoProfile -File build.ps1 psgallery
+cd path\to\vortex-os-skill
+pwsh -NoProfile -File skill.ps1 --agents-discover
 ```
 
-The `psgallery` subcommand runs `Install-Module Vortex` for you, then
-prints instructions for removing the bundled binaries.
+The first invocation:
+1. Looks for a `Vortex\<version>\Vortex.psd1` in `$env:PSModulePath`,
+   `$env:VORTEX_MODULE_PATH`, and the canonical
+   `$HOME\Documents\PowerShell\Modules\Vortex`.
+2. If none is found, runs `install.ps1` which:
+   * Calls `GET https://api.github.com/repos/Cloudmeru/vortex-os-dotnet/releases/latest`
+     (unauthenticated; GitHub allows 60 req/hr per IP).
+   * Downloads `Vortex.dll`, `Vortex.psm1`, `Vortex.psd1`, `ijwhost.dll`
+     from the release's `assets[].browser_download_url`.
+   * Places them in the first writable user-scope module folder
+     (canonical: `$HOME\Documents\PowerShell\Modules\Vortex\<version>\`).
+3. Sets `$env:VORTEX_SKILL_ROOT` to the skill folder so the engine
+   knows where `agents/`, `state/`, `memory/`, `deliverables/` live.
+4. Imports the module and dispatches the command.
+
+### Manual install / pin a specific engine version
+
+```powershell
+pwsh -NoProfile -File install.ps1                      # latest from GitHub
+pwsh -NoProfile -File install.ps1 -Version v0.1.4      # pin a version
+pwsh -NoProfile -File install.ps1 -ModulePath 'D:\psmodules'  # custom path
+$env:VORTEX_VERSION = 'v0.1.4'; pwsh -NoProfile -File install.ps1
+```
+
+The install is **idempotent** — re-running it when the same engine
+version is already present is a no-op. To upgrade, just re-run
+`install.ps1`. To force a reinstall of the same version, delete the
+folder first:
+
+```powershell
+Remove-Item -Recurse -Force "$HOME\Documents\PowerShell\Modules\Vortex\<version>"
+pwsh -NoProfile -File install.ps1
+```
+
+### PowerShell Gallery (future)
+
+When the `Vortex` module is published to PSGallery, you can use the
+gallery version instead:
+
+```powershell
+Install-Module -Name Vortex -Scope CurrentUser -Force
+```
+
+The skill's `skill.ps1` / `verify.ps1` will prefer the user-scope
+module (which PSGallery uses) over its own bundled engine. If the
+user-scope module isn't found, it falls back to the GitHub-release
+install.
+
+### Override the install location
+
+Set `$env:VORTEX_MODULE_PATH` to any directory you own. The skill
+will look there first, then in `$env:PSModulePath`, then in the
+canonical `$HOME\Documents\PowerShell\Modules`. This is useful for
+shared dev environments or sandboxed CI runners.
 
 ---
 
-## 13. Engine Installation (from source)
+## 13. Engine Installation (from source, advanced / forkers only)
 
 If you cloned this skill to fork it, or you need to run on a runtime
 older than .NET 10, you can rebuild the engine from the upstream
 C++/CLI source. The skill ships a helper:
 
 ```powershell
-pwsh -NoProfile -File build.ps1
+pwsh -NoProfile -File build.ps1                # download main.zip + build
+pwsh -NoProfile -File build.ps1 -DotnetSrc 'C:\path\to\vortex-os-dotnet'
+pwsh -NoProfile -File build.ps1 -Install        # build + install to user-scope
 ```
 
 This downloads the source from
 [Cloudmeru/vortex-os-dotnet](https://github.com/Cloudmeru/vortex-os-dotnet),
-compiles it with MSVC v143 (`cl /clr:netcore /std:c++20`), and copies
-the artifacts back next to the skill.
+compiles it with MSVC v143 (`cl /clr:netcore /std:c++20`), and writes
+the artifacts (`Vortex.dll` + `Vortex.psm1` + `Vortex.psd1` +
+`ijwhost.dll`) into the skill root. To make your freshly built engine
+active, copy the 4 files into the user-scope module folder yourself
+(the install.ps1 script can do that — see `-Install` above).
 
 If you have a local checkout of the .NET source repo, point the build
 script at it:
