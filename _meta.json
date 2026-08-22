@@ -66,7 +66,8 @@
     "installer": "install.ps1",
     "source_build_helper": "build.ps1",
     "dep_installer": "install-deps.ps1",
-    "state_migrator": "migrate-state.ps1"
+    "state_migrator": "migrate-state.ps1",
+    "auto_updater": "auto-update.ps1"
   },
   "install": {
     "self_bootstrap": true,
@@ -139,8 +140,21 @@
     "vortex_home_override": "$env:VORTEX_HOME",
     "shared_across_instances": true,
     "survives_skill_update": true,
+    "deliverables_layout": "per-project subfolder (engine v0.1.8+)",
+    "deliverables_path_template": "$env:VORTEX_HOME\\deliverables\\<project_slug>\\",
+    "project_name_sources": ["$env:VORTEX_PROJECT", "-Project flag on skill.ps1", "parent dir of --dispatch-master arg", "filename of objective without extension"],
     "migration_strategy": "manual via migrate-state.ps1 (not auto-migrated by the engine)",
-    "migration_command": "pwsh -NoProfile -File .\\migrate-state.ps1"
+    "migration_command": "pwsh -NoProfile -File .\\migrate-state.ps1",
+    "legacy_flat_adoption_command": "pwsh -NoProfile -File .\\migrate-state.ps1 -AdoptFlat"
+  },
+  "auto_update": {
+    "description": "Starting with skill v0.1.5, skill.ps1 checks for a newer vortex-os-dotnet release on GitHub on every invocation and installs it if available. Rate-limited to once per 6h per VORTEX_HOME.",
+    "script": "auto-update.ps1",
+    "called_by": "skill.ps1 on every invocation",
+    "rate_limit_hours": 6,
+    "opt_out_env": "VORTEX_NO_AUTO_UPDATE=1",
+    "force_check_flag": "-Force",
+    "dry_run_flag": "-DryRun"
   },
   "short_description": "VORTEX-OS: Native Autonomous Studio Command Center.",
   "skill_id": "minimax-skill-vortex-os-7c3a9f1e",
@@ -189,9 +203,9 @@
       "Procedural media generation (audio, narrative, code, video) at factory scale, entirely in-house with no external API keys"
     ]
   },
-  "updated_at": 1787399000000,
+  "updated_at": 1787400000000,
   "verification_date": "2026-08-22",
-  "verification_status": "Clean package verified: skill scripts + agents + docs present, JSON valid, install.ps1 downloads + installs engine from public release, all 8 verification checks pass on a fresh install. Operator playbook moved to references/INSTRUCTIONS.md following the Mavis/Claude 3-level loading convention; SKILL.md kept lean for always-on trigger detection. Engine v0.1.7 writes state to $env:VORTEX_HOME (default %APPDATA%\\Vortex-OS) so outputs survive skill updates.",
+  "verification_status": "Clean package verified: skill scripts + agents + docs present, JSON valid, install.ps1 downloads + installs engine from public release, all 8 verification checks pass on a fresh install. Operator playbook moved to references/INSTRUCTIONS.md following the Mavis/Claude 3-level loading convention; SKILL.md kept lean for always-on trigger detection. Engine v0.1.7+ writes state to $env:VORTEX_HOME (default %APPDATA%\\Vortex-OS) so outputs survive skill updates; engine v0.1.8+ groups deliverables by project name; skill v0.1.5+ auto-updates the engine on every invocation (rate-limited, opt-out).",
   "verified": true,
-  "version": "0.1.4"
+  "version": "0.1.5"
 }

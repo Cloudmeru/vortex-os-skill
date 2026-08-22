@@ -4,6 +4,43 @@ All notable changes to the VORTEX-OS skill package are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.1.5] — 2026-08-22
+
+### Added
+- **`auto-update.ps1`** — engine self-updater. Queries GitHub for
+  the latest `vortex-os-dotnet` release (rate-limited to once per
+  6h per `VORTEX_HOME`) and calls `install.ps1` if a newer
+  version is available. Called automatically by `skill.ps1` on
+  every invocation. Opt out with `$env:VORTEX_NO_AUTO_UPDATE=1`.
+  Bypass the rate limit with `-Force`. Dry-run with `-DryRun`.
+- **`-Project` parameter on `skill.ps1`** — overrides the project
+  name. The engine writes deliverables to
+  `$VORTEX_HOME\deliverables\<project>\` instead of the flat
+  root. The project name is also auto-derived from
+  `$env:VORTEX_PROJECT`, the parent dir of `--dispatch-master`,
+  or the objective's filename if no other source.
+- **`-AdoptFlat` switch on `migrate-state.ps1`** — moves legacy
+  flat `deliverables/` files (from skill <= v0.1.4) into
+  `deliverables/_unfiled/` so the new per-project layout can
+  take over without losing data.
+
+### Changed
+- **Deliverables are now grouped by project** (engine v0.1.8).
+  Outputs from a dispatch land in
+  `$VORTEX_HOME/deliverables/<project>/` instead of the flat
+  `deliverables/` root. The project name is auto-derived from
+  the objective file path, the `-Project` flag, or
+  `$env:VORTEX_PROJECT`. Multiple sessions of the same project
+  no longer clobber each other. The engine refuses to overwrite
+  existing deliverables; the user must pick a new project name
+  (e.g. `-Project trial_of_echoes_v2`) or manually clear the
+  project's deliverables folder first.
+- **`SKILL.md` updated** with a new "Where is my data stored?"
+  section that shows the per-project layout, plus a new
+  "Auto-update of the .NET engine" section.
+- **`_meta.json`** gets a new `auto_update` field and a richer
+  `data_location.deliverables_layout` field.
+
 ## [0.1.4] — 2026-08-22
 
 ### Changed (BREAKING for the data location, INTENTIONAL)

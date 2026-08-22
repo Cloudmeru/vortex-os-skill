@@ -36,7 +36,15 @@ param(
     [string[]] $Arguments,
 
     # Re-run the engine installer before dispatching.
-    [switch] $Install
+    [switch] $Install,
+
+    # Override the project name (defaults to auto-deriving from the
+    # objective file path or $env:VORTEX_PROJECT). The deliverables
+    # for this dispatch will land at
+    #   $env:VORTEX_HOME\deliverables\<Project>\
+    # e.g. `--Project trial_of_echoes` puts outputs in
+    #   %APPDATA%\Vortex-OS\deliverables\trial_of_echoes\
+    [string] $Project
 )
 
 $ErrorActionPreference = 'Stop'
@@ -49,6 +57,25 @@ $here = Split-Path -Parent $MyInvocation.MyCommand.Path
 # not just the ones coming from this script. Set it BEFORE Import-Module
 # so the module's psm1 sees the right value at load time.
 $env:VORTEX_SKILL_ROOT = $here
+
+# Also set VORTEX_PROJECT if the user passed -Project. This is read by the
+# engine in Skill::Run to compute p->ProjectName and p->ProjectDeliverablesDir.
+if ($Project) { $env:VORTEX_PROJECT = $Project }
+
+# --- 0b. Auto-update check (rate-limited, opt-out) ---------------------------
+# On first invocation (and every 6h after), check if a newer engine is on
+# GitHub and install it if so. Skipped if $env:VORTEX_NO_AUTO_UPDATE = '1'.
+# The check is non-blocking on the dispatch: install.ps1 writes to a new
+# versioned folder, the current run keeps using the engine that's already
+# loaded into the PowerShell session.
+$autoUpdate = Join-Path $here 'auto-update.ps1'
+if (Test-Path $autoUpdate) {
+    try {
+        & pwsh -NoProfile -File $autoUpdate
+    } catch {
+        Write-Host "[vortex-os] auto-update.ps1 failed (non-fatal): $($_.Exception.Message)" -ForegroundColor DarkYellow
+    }
+}
 
 # --- 1. PS7+ guard -----------------------------------------------------------
 if ($PSVersionTable.PSEdition -ne 'Core' -or $PSVersionTable.PSVersion.Major -lt 7) {

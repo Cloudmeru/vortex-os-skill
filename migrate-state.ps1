@@ -35,6 +35,9 @@
 #   pwsh -NoProfile -File migrate-state.ps1 -VortexHome 'D:\my-data'   # override target
 #   pwsh -NoProfile -File migrate-state.ps1 -WhatIf                     # dry-run
 #   pwsh -NoProfile -File migrate-state.ps1 -DeleteSource               # also delete source after copy
+#   pwsh -NoProfile -File migrate-state.ps1 -AdoptFlat                  # file legacy flat
+#                                                                        # deliverables/ into
+#                                                                        # deliverables/_unfiled/
 # =============================================================================
 [CmdletBinding()]
 param(
@@ -48,7 +51,15 @@ param(
     # After a successful copy, also delete the source subdirs from the
     # skill folder. Off by default — we leave the source in place so
     # the operator can verify the migration before committing to it.
-    [switch] $DeleteSource
+    [switch] $DeleteSource,
+
+    # Adopt the legacy flat deliverables layout: move all top-level
+    # files in $VORTEX_HOME\deliverables\ (from skill versions <= 0.1.4)
+    # into $VORTEX_HOME\deliverables\_unfiled\ so the new per-project
+    # subfolder layout can take over without losing data. Use this ONCE
+    # after upgrading to skill v0.1.5+ if you have loose files in
+    # deliverables\.
+    [switch] $AdoptFlat
 )
 
 $ErrorActionPreference = 'Stop'
@@ -178,4 +189,55 @@ if ($moved -gt 0 -and -not $WhatIf -and -not $DeleteSource) {
     Write-Host "Verify the migration by checking the target paths under $VortexHome." -ForegroundColor Yellow
     Write-Host "When you're satisfied, re-run with -DeleteSource to remove the originals:" -ForegroundColor Yellow
     Write-Host "  pwsh -NoProfile -File migrate-state.ps1 -DeleteSource" -ForegroundColor Yellow
+}
+
+# --- 6. -AdoptFlat: file legacy loose files into _unfiled/ ----------------
+# For users upgrading from skill <= v0.1.4: the engine used to write
+# deliverables to $VORTEX_HOME\deliverables\ (flat, no project subfolder).
+# In v0.1.5+, new dispatches write to deliverables\<project>\. Existing
+# flat files in deliverables\ are still there but invisible to the new
+# per-project layout. -AdoptFlat moves them into deliverables\_unfiled\
+# so the user can review and re-file them per project. Idempotent.
+if ($AdoptFlat) {
+    $flatDir = Join-Path $VortexHome 'deliverables'
+    $unfiledDir = Join-Path $flatDir '_unfiled'
+
+    if (-not (Test-Path $flatDir)) {
+        Write-Host ""
+        Write-Host "[vortex-os] -AdoptFlat: no deliverables\ folder at $flatDir; nothing to file." -ForegroundColor Yellow
+        return
+    }
+
+    if (-not (Test-Path $unfiledDir)) {
+        if (-not $WhatIf) { New-Item -ItemType Directory -Path $unfiledDir -Force | Out-Null }
+        Write-Host "[vortex-os] -AdoptFlat: created $unfiledDir" -ForegroundColor Green
+    }
+
+    $moved = 0
+    $skipped = 0
+    foreach ($f in Get-ChildItem -LiteralPath $flatDir -File -ErrorAction SilentlyContinue) {
+        $dest = Join-Path $unfiledDir $f.Name
+        if (Test-Path $dest) {
+            $skipped++
+            continue
+        }
+        if ($WhatIf) {
+            Write-Host "[vortex-os]   (whatif) $f -> _unfiled\$($f.Name)" -ForegroundColor Cyan
+            $moved++
+        } else {
+            Move-Item -LiteralPath $f.FullName -Destination $dest
+            Write-Host "[vortex-os]   $f -> _unfiled\$($f.Name)" -ForegroundColor Green
+            $moved++
+        }
+    }
+
+    Write-Host ""
+    Write-Host "[vortex-os] -AdoptFlat summary: moved=$moved skipped=$skipped" -ForegroundColor Cyan
+    if ($moved -gt 0 -and -not $WhatIf) {
+        Write-Host ""
+        Write-Host "[vortex-os] Legacy files are now in $unfiledDir." -ForegroundColor Green
+        Write-Host "  - review them with:  Get-ChildItem '$unfiledDir'" -ForegroundColor Gray
+        Write-Host "  - file a file into a project:  Move-Item '$unfiledDir\<file>' '<projectDir>'" -ForegroundColor Gray
+        Write-Host "  - or leave them in _unfiled/ as the v0.1.4-and-before archive" -ForegroundColor Gray
+    }
 }

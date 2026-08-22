@@ -144,7 +144,8 @@ This skill folder is laid out as follows. Read only what you need.
 | `skill.ps1` | **The one-shot CLI entry point.** Self-bootstrapping: auto-installs the engine on first run. This is the primary command for any code agent | Always invoke this to dispatch a command |
 | `install.ps1` | **The engine installer** (downloads from the GitHub release). Run `skill.ps1 -Install` or this directly | When the user wants to pin a specific engine version or pre-stage the install |
 | `install-deps.ps1` | **System-dependency installer** (uses `winget` to install `sqlite3` and optionally `ffmpeg`). Reads the dep list from `_meta.json.winget_install_ids` | Run on a fresh machine before the first dispatch, if `verify.ps1` reports missing tools |
-| `migrate-state.ps1` | **One-time migration** of legacy state (deliverables, audit log, swarms, state) from the skill folder to `$env:VORTEX_HOME` (default `%APPDATA%\Vortex-OS`). Idempotent, dry-run with `-WhatIf` | Run ONCE after upgrading to skill v0.1.4+ to move existing data to the durable location |
+| `auto-update.ps1` | **Engine self-updater**. Queries GitHub for the latest `vortex-os-dotnet` release (rate-limited to once per 6 h per `VORTEX_HOME`) and calls `install.ps1` if a newer version is available. Opt out with `$env:VORTEX_NO_AUTO_UPDATE=1`. Called automatically by `skill.ps1` on every invocation | First run per day, or after a long pause |
+| `migrate-state.ps1` | **One-time migration** of legacy state (deliverables, audit log, swarms, state) from the skill folder to `$env:VORTEX_HOME` (default `%APPDATA%\Vortex-OS`). Idempotent, dry-run with `-WhatIf`, has `-AdoptFlat` switch to file legacy flat deliverables into `deliverables/_unfiled/` after upgrading to v0.1.5+ | Run ONCE after upgrading to skill v0.1.4+ to move existing data to the durable location; re-run with `-AdoptFlat` once after upgrading to v0.1.5+ to organize the new per-project layout |
 | `verify.ps1` | **Post-upload verification** (8 checks: file presence, JSON validity, branding, agent discovery, agent lint, help banner, engine installation). Self-bootstrapping | Run before publishing; CI gate |
 | `build.ps1` | **Source-build helper** for forkers (downloads + compiles the .NET engine from `vortex-os-dotnet`) | Only if you've cloned this skill to fork the engine |
 | `agents/` | **3 supervisor/inspector manifest files** (the engine's input) | When writing custom agent manifests |
@@ -204,8 +205,41 @@ This means:
   directory you own. Useful for shared dev environments, sandboxed
   CI runners, or putting data on a non-system drive.
 
+**Starting with skill v0.1.5 + engine v0.1.8**, the engine
+**groups deliverables by project** so outputs from multiple
+sessions and conversations don't clobber each other:
+
+```
+$VORTEX_HOME/
+└── deliverables/
+    ├── trial_of_echoes/                 # project 1 (auto-derived)
+    │   ├── .manifest.json               # self-describing project metadata
+    │   ├── scene1.md
+    │   ├── scene2.md
+    │   ├── scene3.md
+    │   ├── mira_portrait.png
+    │   └── trial_of_echoes.html
+    ├── cartographer_daughter/          # project 2
+    │   ├── .manifest.json
+    │   ├── episode1_script.md
+    │   └── beatriz_portrait.png
+    └── _unfiled/                        # legacy files (post-migration)
+```
+
+The project name is auto-derived (in priority order):
+1. `$env:VORTEX_PROJECT`
+2. The `-Project <name>` flag on `skill.ps1`
+3. The parent dir of the `--dispatch-master` arg (e.g. `projects/trial_of_echoes/objective.md` → `trial_of_echoes`)
+4. The filename of the objective without extension (e.g. `cartographer_ep1.md` → `cartographer_ep1`)
+5. If none of the above apply, deliverables land at the flat `deliverables\` root
+
+To re-dispatch the same project with new instructions, the engine
+**refuses to overwrite** and asks you to pick a new project name
+(or use `-Project <name>_v2`). To force overwrites, manually
+clear the project's `deliverables\<project>\` folder first.
+
 **Migrating from an older skill version (v0.1.3 and below):**
-the engine v0.1.7 does **NOT** auto-migrate. Run the skill's
+the engine v0.1.7+ does **NOT** auto-migrate. Run the skill's
 `migrate-state.ps1` once to copy the old `deliverables/`, `memory/`,
 `swarms/`, `state/`, `tasks/` from the skill folder to
 `%APPDATA%\Vortex-OS\`. The script is idempotent and supports
@@ -221,6 +255,39 @@ pwsh -NoProfile -File .\migrate-state.ps1
 
 # 3. After verifying the target, remove the originals
 pwsh -NoProfile -File .\migrate-state.ps1 -DeleteSource
+
+# 4. (only after upgrading to v0.1.5+) File legacy flat deliverables
+#    into deliverables\_unfiled\ so the new per-project layout can take over
+pwsh -NoProfile -File .\migrate-state.ps1 -AdoptFlat
+```
+
+## Auto-update of the .NET engine
+
+Starting with **skill v0.1.5**, `skill.ps1` automatically checks
+for a newer `vortex-os-dotnet` release on GitHub on every
+invocation and installs it if a newer version is available. The
+check is rate-limited to once per 6 hours per `VORTEX_HOME` (so
+the GitHub API is hit at most ~4 times per day) and is opt-out
+via `$env:VORTEX_NO_AUTO_UPDATE=1`.
+
+When an update is found, the new engine is downloaded to a new
+`Vortex\<version>\` folder (e.g. `Vortex\0.1.9\`), the old
+version is left in place for rollback, and the message
+`"Engine updated to v0.1.9. Restart skill.ps1 to use the new
+version."` is printed. The next `skill.ps1` invocation picks up
+the new version automatically (PowerShell's module loader uses
+the highest version by default).
+
+To force a check right now (bypassing the 6h rate limit):
+
+```powershell
+pwsh -NoProfile -File .\auto-update.ps1 -Force
+```
+
+To install a specific version manually (bypasses auto-update):
+
+```powershell
+pwsh -NoProfile -File .\install.ps1 -Version v0.1.7
 ```
 
 ---

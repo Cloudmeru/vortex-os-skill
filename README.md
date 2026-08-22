@@ -68,7 +68,8 @@ vortex-os-skill/
 ├── verify.ps1                             ← ★ Post-upload verification entry point
 ├── install.ps1                            ← Engine installer (downloads from GitHub release)
 ├── install-deps.ps1                       ← System-dep installer (uses winget; reads _meta.json)
-├── migrate-state.ps1                      ← One-time state migration (skill folder → $env:VORTEX_HOME)
+├── auto-update.ps1                        ← Engine self-updater (checks GitHub, rate-limited 6h, opt-out)
+├── migrate-state.ps1                      ← One-time state migration (skill folder → $env:VORTEX_HOME; -AdoptFlat for v0.1.4 legacy data)
 ├── build.ps1                              ← Helper: source-build the engine (for forkers)
 │
 ├── agents/                                ← 3 supervisor/inspector manifests
@@ -188,6 +189,28 @@ multiple code agents on the same machine (e.g. minimax code +
 hermes) share the same audit log + deliverables. Override the
 location with `$env:VORTEX_HOME = 'D:\my-data'`.
 
+Starting with **skill v0.1.5 + engine v0.1.8**, deliverables
+are **grouped by project** so multiple sessions of the same
+project (or multiple projects) live side by side without
+clobbering each other:
+
+```
+%APPDATA%\Vortex-OS\deliverables\
+├── trial_of_echoes\        # project 1 (slug from the objective file)
+│   ├── .manifest.json
+│   ├── scene1.md
+│   └── trial_of_echoes.html
+├── cartographer_daughter\ # project 2
+│   ├── .manifest.json
+│   ├── episode1_script.md
+│   └── beatriz_portrait.png
+└── _unfiled\               # legacy files (post-migration)
+```
+
+The project name is auto-derived from the objective file path
+(`projects/trial_of_echoes/objective.md` → `trial_of_echoes`),
+or override with `-Project <name>` / `$env:VORTEX_PROJECT`.
+
 After upgrading from skill v0.1.3 or earlier, run the bundled
 migration once to move your existing data:
 
@@ -195,6 +218,28 @@ migration once to move your existing data:
 pwsh -NoProfile -File .\migrate-state.ps1 -WhatIf       # dry-run
 pwsh -NoProfile -File .\migrate-state.ps1              # move
 pwsh -NoProfile -File .\migrate-state.ps1 -DeleteSource # remove originals
+
+# (only after upgrading to v0.1.5+) file legacy flat deliverables
+# into deliverables\_unfiled\ so the per-project layout can take over
+pwsh -NoProfile -File .\migrate-state.ps1 -AdoptFlat
+```
+
+### Auto-update of the .NET engine
+
+`skill.ps1` automatically checks for a newer `vortex-os-dotnet`
+release on every invocation and installs it if available. The
+check is rate-limited to once per 6 hours per `VORTEX_HOME`,
+opt-out via `$env:VORTEX_NO_AUTO_UPDATE=1`.
+
+```powershell
+# Force a check right now (bypass the 6h cache)
+pwsh -NoProfile -File .\auto-update.ps1 -Force
+
+# Dry-run: print what would happen, don't actually install
+pwsh -NoProfile -File .\auto-update.ps1 -DryRun
+
+# Pin a specific engine version (bypass auto-update)
+pwsh -NoProfile -File .\install.ps1 -Version v0.1.7
 ```
 
 ---
