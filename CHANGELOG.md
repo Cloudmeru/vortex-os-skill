@@ -4,6 +4,28 @@ All notable changes to the VORTEX-OS skill package are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.1.6] — 2026-08-22
+
+### Changed
+- **Skill description rewritten to be capability-driven and universal.**
+  The frontmatter `description` and `_meta.json.description` no
+  longer mention specific products (VibeOS, WebSims, Hailuo,
+  ffmpeg, MiniMax, named universes) — they describe the
+  orchestration capabilities (4-tier chain, continuity
+  enforcement, self-healing prompts, HITL approval, per-agent
+  audit log, episodic Golden Path templates) and the observable
+  prompt characteristics that should trigger the skill
+  (multi-domain work, continuity requirements, HITL needs,
+  audit requirements, long-running scope, in-house execution).
+  This makes the skill detect the right prompts regardless of
+  the specific product / domain the user is working in.
+- **`SKILL.md` body** — the "Trigger Conditions" section
+  rewritten to match the new capability-driven framing.
+- **`display_name`** updated from "Native Autonomous Studio
+  Command Center" to "Multi-Agent Orchestration Engine" (the
+  product-specific framing is gone; the new name describes
+  the orchestration pattern, not the use case).
+
 ## [0.1.5] — 2026-08-22
 
 ### Added

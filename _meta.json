@@ -52,8 +52,8 @@
     "adversarial-red-teaming"
   ],
   "category": "automation",
-  "description": "VORTEX-OS is the enterprise-grade brain for your digital studio, built exclusively to harness MiniMax's internal multimodal engines. VORTEX-OS replaces manual prompting with a hierarchical, self-governing swarm of specialized agents. It plans, executes, and quality-controls complex projects entirely in-house — from narrative design and native UI/app scaffolding to local ffmpeg audio processing and Hailuo video generation. Stop managing tasks; start commanding a native digital workforce.",
-  "display_name": "VORTEX-OS — Native Autonomous Studio Command Center",
+  "description": "VORTEX-OS is a self-bootstrapping PowerShell skill that drives the .NET 10 C++/CLI engine at Cloudmeru/vortex-os-dotnet to orchestrate multi-agent work pipelines with strict continuity enforcement, self-healing prompts, and explicit Human-in-the-Loop approval. The engine decomposes a master objective into a 4-tier chain of command (planner → supervisor → shift → specialized workers), runs the workers in parallel across distinct domains, auto-rewrites any prompt that violates a continuity rule, gates high-stakes actions behind explicit human approval, and writes a fully-attributed audit log. Use it for: multi-domain work (3+ deliverable types in one pipeline), universe/character/era continuity enforcement, explicit HITL approval on high-stakes actions, per-agent audit trails, long-running/episodic/series scope, in-house execution without external API dependencies. Do NOT use it for: single-line code questions, pure chat, single-file edits with no cross-domain coordination, read-only research, or tasks with no clear objective.",
+  "display_name": "VORTEX-OS — Multi-Agent Orchestration Engine",
   "entry_point": "skill.ps1",
   "files": {
     "instruction_brain": "SKILL.md",
@@ -203,9 +203,9 @@
       "Procedural media generation (audio, narrative, code, video) at factory scale, entirely in-house with no external API keys"
     ]
   },
-  "updated_at": 1787400000000,
+  "updated_at": 1787401000000,
   "verification_date": "2026-08-22",
-  "verification_status": "Clean package verified: skill scripts + agents + docs present, JSON valid, install.ps1 downloads + installs engine from public release, all 8 verification checks pass on a fresh install. Operator playbook moved to references/INSTRUCTIONS.md following the Mavis/Claude 3-level loading convention; SKILL.md kept lean for always-on trigger detection. Engine v0.1.7+ writes state to $env:VORTEX_HOME (default %APPDATA%\\Vortex-OS) so outputs survive skill updates; engine v0.1.8+ groups deliverables by project name; skill v0.1.5+ auto-updates the engine on every invocation (rate-limited, opt-out).",
+  "verification_status": "Clean package verified: skill scripts + agents + docs present, JSON valid, install.ps1 downloads + installs engine from public release, all 8 verification checks pass on a fresh install. Operator playbook moved to references/INSTRUCTIONS.md following the Mavis/Claude 3-level loading convention; SKILL.md kept lean for always-on trigger detection. Engine v0.1.7+ writes state to $env:VORTEX_HOME (default %APPDATA%\\Vortex-OS) so outputs survive skill updates; engine v0.1.8+ groups deliverables by project name; skill v0.1.5+ auto-updates the engine on every invocation (rate-limited, opt-out). SKILL.md description rewritten in v0.1.6 to be capability-driven and universal (no product names); trigger conditions match observable prompt characteristics.",
   "verified": true,
-  "version": "0.1.5"
+  "version": "0.1.6"
 }
