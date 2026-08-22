@@ -144,6 +144,7 @@ This skill folder is laid out as follows. Read only what you need.
 | `skill.ps1` | **The one-shot CLI entry point.** Self-bootstrapping: auto-installs the engine on first run. This is the primary command for any code agent | Always invoke this to dispatch a command |
 | `install.ps1` | **The engine installer** (downloads from the GitHub release). Run `skill.ps1 -Install` or this directly | When the user wants to pin a specific engine version or pre-stage the install |
 | `install-deps.ps1` | **System-dependency installer** (uses `winget` to install `sqlite3` and optionally `ffmpeg`). Reads the dep list from `_meta.json.winget_install_ids` | Run on a fresh machine before the first dispatch, if `verify.ps1` reports missing tools |
+| `migrate-state.ps1` | **One-time migration** of legacy state (deliverables, audit log, swarms, state) from the skill folder to `$env:VORTEX_HOME` (default `%APPDATA%\Vortex-OS`). Idempotent, dry-run with `-WhatIf` | Run ONCE after upgrading to skill v0.1.4+ to move existing data to the durable location |
 | `verify.ps1` | **Post-upload verification** (8 checks: file presence, JSON validity, branding, agent discovery, agent lint, help banner, engine installation). Self-bootstrapping | Run before publishing; CI gate |
 | `build.ps1` | **Source-build helper** for forkers (downloads + compiles the .NET engine from `vortex-os-dotnet`) | Only if you've cloned this skill to fork the engine |
 | `agents/` | **3 supervisor/inspector manifest files** (the engine's input) | When writing custom agent manifests |
@@ -167,13 +168,60 @@ This skill folder is laid out as follows. Read only what you need.
      Handles OneDrive-redirected `Documents` folders gracefully by
      probing each PSModulePath entry with a sentinel subdir.
 3. Sets `$env:VORTEX_SKILL_ROOT` to the skill folder so the engine
-   finds the skill's `agents/`, `state/`, `memory/`, `deliverables/`.
+   finds the skill's `agents/` (and `templates/`, if any).
 4. Imports the module and dispatches the command.
 
 The install is **idempotent** — re-running when the same engine version
 is already present is a no-op. To upgrade, just re-run `skill.ps1` (or
-`install.ps1` directly). To pin a version: `-Version v0.1.4` or set
+`install.ps1` directly). To pin a version: `-Version v0.1.7` or set
 `$env:VORTEX_VERSION` before invoking.
+
+---
+
+## Where is my data stored?
+
+Starting with **skill v0.1.4 + engine v0.1.7**, the engine splits
+storage into two locations:
+
+| Path | What's there | Replaced on skill update? | Shared across skill instances? |
+|---|---|---|---|
+| **Skill folder** (where you cloned the skill) | `agents/`, `templates/`, scripts, docs, `_meta.json` | **Yes** — that's the whole point | No |
+| **`$env:VORTEX_HOME`** (default: `%APPDATA%\Vortex-OS\`) | `state/`, `memory/`, `swarms/`, `deliverables/`, `tasks/` | **No** — durable, user-scope | **Yes** — multiple code agents on the same machine share the same data |
+
+This means:
+
+- **Upgrading the skill never wipes your work.** Re-cloning the
+  skill (or pulling a new version) only replaces the scripts, the
+  agent manifests, and the docs. Your `deliverables/`, audit log,
+  swarms, HITL state, and memory all live in `%APPDATA%\Vortex-OS\`
+  and survive.
+- **Two code agents on the same machine share state.** If you have
+  the VORTEX-OS skill deployed to both `minimax code` and `hermes`,
+  they both read and write the same `%APPDATA%\Vortex-OS\` folder
+  (unless you override `VORTEX_HOME`). A dispatch from one agent
+  shows up in the audit log the other agent reads.
+- **Override the location** by setting `$env:VORTEX_HOME` to any
+  directory you own. Useful for shared dev environments, sandboxed
+  CI runners, or putting data on a non-system drive.
+
+**Migrating from an older skill version (v0.1.3 and below):**
+the engine v0.1.7 does **NOT** auto-migrate. Run the skill's
+`migrate-state.ps1` once to copy the old `deliverables/`, `memory/`,
+`swarms/`, `state/`, `tasks/` from the skill folder to
+`%APPDATA%\Vortex-OS\`. The script is idempotent and supports
+`-WhatIf` (dry-run) and `-DeleteSource` (remove the originals
+after verifying the copy).
+
+```powershell
+# 1. Dry-run to see what would move
+pwsh -NoProfile -File .\migrate-state.ps1 -WhatIf
+
+# 2. Actually move (leaves the source in place; you can delete it later)
+pwsh -NoProfile -File .\migrate-state.ps1
+
+# 3. After verifying the target, remove the originals
+pwsh -NoProfile -File .\migrate-state.ps1 -DeleteSource
+```
 
 ---
 

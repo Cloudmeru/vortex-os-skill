@@ -65,7 +65,8 @@
     "code_agent_compat": "COMPATIBILITY.md",
     "installer": "install.ps1",
     "source_build_helper": "build.ps1",
-    "dep_installer": "install-deps.ps1"
+    "dep_installer": "install-deps.ps1",
+    "state_migrator": "migrate-state.ps1"
   },
   "install": {
     "self_bootstrap": true,
@@ -130,6 +131,17 @@
     ],
     "winget_install_note": "The engine is pure .NET 10 / C++/CLI. It does NOT need Python, jq, or any scripting runtime. All system deps install via Windows Package Manager (winget) — never pip/brew/apt. Use the bundled install-deps.ps1 to install."
   },
+  "data_location": {
+    "description": "Starting with engine v0.1.7 + skill v0.1.4, the engine splits storage into a mutable skill folder and a durable VORTEX_HOME. The user's deliverables, audit log, swarms, and HITL state live in VORTEX_HOME so they survive skill updates and are shared across multiple skill instances on the same machine.",
+    "skill_dir_holds": ["agents", "templates", "scripts", "docs", "_meta.json"],
+    "vortex_home_holds": ["state", "memory", "swarms", "deliverables", "tasks"],
+    "vortex_home_default": "$env:APPDATA\\Vortex-OS",
+    "vortex_home_override": "$env:VORTEX_HOME",
+    "shared_across_instances": true,
+    "survives_skill_update": true,
+    "migration_strategy": "manual via migrate-state.ps1 (not auto-migrated by the engine)",
+    "migration_command": "pwsh -NoProfile -File .\\migrate-state.ps1"
+  },
   "short_description": "VORTEX-OS: Native Autonomous Studio Command Center.",
   "skill_id": "minimax-skill-vortex-os-7c3a9f1e",
   "subcategory": "multi-agent-orchestration",
@@ -177,9 +189,9 @@
       "Procedural media generation (audio, narrative, code, video) at factory scale, entirely in-house with no external API keys"
     ]
   },
-  "updated_at": 1787382000000,
+  "updated_at": 1787399000000,
   "verification_date": "2026-08-22",
-  "verification_status": "Clean package verified: skill scripts + agents + docs present, JSON valid, install.ps1 downloads + installs engine from public release, all 8 verification checks pass on a fresh install. Operator playbook moved to references/INSTRUCTIONS.md following the Mavis/Claude 3-level loading convention; SKILL.md kept lean for always-on trigger detection.",
+  "verification_status": "Clean package verified: skill scripts + agents + docs present, JSON valid, install.ps1 downloads + installs engine from public release, all 8 verification checks pass on a fresh install. Operator playbook moved to references/INSTRUCTIONS.md following the Mavis/Claude 3-level loading convention; SKILL.md kept lean for always-on trigger detection. Engine v0.1.7 writes state to $env:VORTEX_HOME (default %APPDATA%\\Vortex-OS) so outputs survive skill updates.",
   "verified": true,
-  "version": "0.1.3"
+  "version": "0.1.4"
 }

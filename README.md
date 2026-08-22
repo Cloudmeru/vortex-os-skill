@@ -68,6 +68,7 @@ vortex-os-skill/
 ├── verify.ps1                             ← ★ Post-upload verification entry point
 ├── install.ps1                            ← Engine installer (downloads from GitHub release)
 ├── install-deps.ps1                       ← System-dep installer (uses winget; reads _meta.json)
+├── migrate-state.ps1                      ← One-time state migration (skill folder → $env:VORTEX_HOME)
 ├── build.ps1                              ← Helper: source-build the engine (for forkers)
 │
 ├── agents/                                ← 3 supervisor/inspector manifests
@@ -171,6 +172,30 @@ and is the single source of truth. Current deps:
 > **A code agent reading this MUST install these via `winget install
 > --id <winget_id>`, NOT via pip / brew / apt / choco.** The
 > `install-deps.ps1` script is the canonical wrapper.
+
+### Where is my data stored?
+
+Starting with **skill v0.1.4 + engine v0.1.7**, the engine splits
+storage into two locations:
+
+| Location | Holds | Replaced on skill update? | Shared across instances? |
+|---|---|---|---|
+| **Skill folder** (where you cloned) | `agents/`, `templates/`, scripts, docs | **Yes** | No |
+| **`$env:VORTEX_HOME`** (default `%APPDATA%\Vortex-OS\`) | `state/`, `memory/`, `swarms/`, `deliverables/`, `tasks/` | **No** | **Yes** |
+
+This means upgrading the skill **never wipes your work**, and
+multiple code agents on the same machine (e.g. minimax code +
+hermes) share the same audit log + deliverables. Override the
+location with `$env:VORTEX_HOME = 'D:\my-data'`.
+
+After upgrading from skill v0.1.3 or earlier, run the bundled
+migration once to move your existing data:
+
+```powershell
+pwsh -NoProfile -File .\migrate-state.ps1 -WhatIf       # dry-run
+pwsh -NoProfile -File .\migrate-state.ps1              # move
+pwsh -NoProfile -File .\migrate-state.ps1 -DeleteSource # remove originals
+```
 
 ---
 

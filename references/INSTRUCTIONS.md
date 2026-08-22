@@ -441,6 +441,73 @@ will look there first, then in `$env:PSModulePath`, then in the
 canonical `$HOME\Documents\PowerShell\Modules`. This is useful for
 shared dev environments or sandboxed CI runners.
 
+### 12.6. Where is my data stored? (VORTEX_HOME)
+
+Starting with **engine v0.1.7 + skill v0.1.4**, the engine splits
+its storage into two roots. The skill folder is the "installer +
+manifest" (gets replaced on update); `$env:VORTEX_HOME` is the
+"user's work" (durable, user-scope, shared across skill instances).
+
+| Location | Holds | Replaced on skill update? | Shared across instances? |
+|---|---|---|---|
+| **Skill folder** (where you cloned the skill) | `agents/`, `templates/`, scripts, docs, `_meta.json` | **Yes** | No |
+| **`$env:VORTEX_HOME`** (default: `%APPDATA%\Vortex-OS\`) | `state/`, `memory/`, `swarms/`, `deliverables/`, `tasks/` | **No** | **Yes** |
+
+**Why this matters for the LLM operating VORTEX-OS:**
+- Your deliverables (the user's work) **never get wiped** when the
+  skill is updated. A new skill release only replaces the
+  scripts, the agent manifests, and the docs.
+- Multiple code agents on the same machine (e.g. minimax code
+  + hermes) share the same data because `$env:APPDATA%\Vortex-OS`
+  is the same path for any process run by the same user.
+- The audit log (`memory\audit.jsonl`) accumulates across skill
+  updates AND across code agents — you get a single
+  canonical history of all dispatches.
+
+**Override the location** by setting `$env:VORTEX_HOME` to any
+directory you own. The engine reads this env var on every call;
+if unset, it defaults to `%APPDATA%\Vortex-OS`. Useful for
+shared dev environments, sandboxed CI runners, or putting data
+on a non-system drive.
+
+**Concurrency note:** if you run VORTEX-OS from two code agents
+simultaneously, both will write to the same `audit.jsonl` and
+state files. Lines can interleave. If you need strict
+single-writer semantics, set different `$env:VORTEX_HOME` for
+each instance.
+
+### 12.7. Migrating from an older skill version (v0.1.3 and below)
+
+The engine v0.1.7 does **NOT** auto-migrate existing data from
+the skill folder to `$env:VORTEX_HOME`. You run the skill's
+`migrate-state.ps1` once to move the old data over. The script
+is idempotent (skips subdirs that already exist at the target)
+and supports `-WhatIf` for a dry-run.
+
+```powershell
+# 1. Dry-run: see what would be moved
+pwsh -NoProfile -File .\migrate-state.ps1 -WhatIf
+
+# 2. Actually move (leaves the source in place; you can delete it later)
+pwsh -NoProfile -File .\migrate-state.ps1
+
+# 3. After verifying the target, remove the originals from the skill folder
+pwsh -NoProfile -File .\migrate-state.ps1 -DeleteSource
+```
+
+What gets moved (source: skill folder → target: `$env:VORTEX_HOME`):
+
+| Source (skill folder) | Target (`$env:VORTEX_HOME`) |
+|---|---|
+| `<skill>/deliverables/` | `$env:VORTEX_HOME/deliverables/` |
+| `<skill>/memory/` | `$env:VORTEX_HOME/memory/` |
+| `<skill>/swarms/` | `$env:VORTEX_HOME/swarms/` |
+| `<skill>/state/` | `$env:VORTEX_HOME/state/` |
+| `<skill>/tasks/` | `$env:VORTEX_HOME/tasks/` |
+
+What is NOT moved (per-skill, gets replaced on update by design):
+`agents/`, `templates/`, the scripts, the docs, `_meta.json`.
+
 ### 12.5. System dependencies (one-time, per machine)
 
 The engine is **pure .NET 10 / C++/CLI** — it does NOT need Python,

@@ -4,6 +4,46 @@ All notable changes to the VORTEX-OS skill package are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.1.4] — 2026-08-22
+
+### Changed (BREAKING for the data location, INTENTIONAL)
+- **Runtime state now lives in `$env:VORTEX_HOME`** (default
+  `%APPDATA%\Vortex-OS\`), not in the skill folder. The engine
+  v0.1.7 splits its root paths into two: `SkillDir` (mutable,
+  where `agents/` + `templates/` live) and `HomeDir` (durable,
+  where `state/` + `memory/` + `swarms/` + `deliverables/` +
+  `tasks/` live). The skill folder is now just the "installer +
+  manifest" — your deliverables, audit log, swarms, HITL state,
+  and memory are durable and live outside the skill.
+- **User deliverables survive skill updates.** When you re-clone
+  the skill (or pull a new version), nothing under
+  `%APPDATA%\Vortex-OS\` is touched. The `git pull` only replaces
+  the scripts, the agent manifests, and the docs.
+- **Multiple skill instances on the same machine share state.**
+  If you have the VORTEX-OS skill deployed to both `minimax code`
+  and `hermes` on the same Windows host, they read and write the
+  same `%APPDATA%\Vortex-OS\` (since both fall back to the
+  same default). A dispatch from one agent shows up in the audit
+  log the other agent reads.
+- **`SKILL.md` and `INSTRUCTIONS.md` updated** to document
+  `VORTEX_HOME`, the new `data_location` field, the migration
+  strategy, and the new `migrate-state.ps1` script.
+
+### Added
+- **`migrate-state.ps1`** — one-time manual migration. Copies
+  legacy `deliverables/`, `memory/`, `swarms/`, `state/`,
+  `tasks/` from the skill folder to `$env:VORTEX_HOME`.
+  Idempotent (skips subdirs that already exist at the target).
+  Supports `-WhatIf` (dry-run) and `-DeleteSource` (remove the
+  originals after verifying the copy).
+- **`_meta.json.data_location`** field describing the new
+  two-root model.
+
+### Migration
+- **Engine does NOT auto-migrate.** Run `migrate-state.ps1` once
+  after upgrading to skill v0.1.4+. Old data is left in place
+  after migration so the operator can verify before deleting.
+
 ## [0.1.3] — 2026-08-22
 
 ### Changed
