@@ -49,7 +49,10 @@
     "ffmpeg-audio-processing",
     "golden-path-templates",
     "token-auditing",
-    "adversarial-red-teaming"
+    "adversarial-red-teaming",
+    "packager-worker",
+    "decision-history",
+    "template-replay"
   ],
   "category": "automation",
   "description": "VORTEX-OS is a self-bootstrapping PowerShell skill that drives the .NET 10 C++/CLI engine at Cloudmeru/vortex-os-dotnet to orchestrate multi-agent work pipelines with strict continuity enforcement, self-healing prompts, and explicit Human-in-the-Loop approval. The engine decomposes a master objective into a 4-tier chain of command (planner → supervisor → shift → specialized workers), runs the workers in parallel across distinct domains, auto-rewrites any prompt that violates a continuity rule, gates high-stakes actions behind explicit human approval, and writes a fully-attributed audit log. Use it for: multi-domain work (3+ deliverable types in one pipeline), universe/character/era continuity enforcement, explicit HITL approval on high-stakes actions, per-agent audit trails, long-running/episodic/series scope, in-house execution without external API dependencies. Do NOT use it for: single-line code questions, pure chat, single-file edits with no cross-domain coordination, read-only research, or tasks with no clear objective.",
@@ -67,7 +70,14 @@
     "source_build_helper": "build.ps1",
     "dep_installer": "install-deps.ps1",
     "state_migrator": "migrate-state.ps1",
-    "auto_updater": "auto-update.ps1"
+    "auto_updater": "auto-update.ps1",
+    "uninstaller": "uninstall.ps1",
+    "visual_walkthrough": "walkthrough/index.html",
+    "architecture_diagrams": "references/architecture.md",
+    "future_recommendations": "idea-future-recommendations.md",
+    "architecture_decisions": "idea-architecture-decisions.md",
+    "faq_and_pitfalls": "idea-faq-and-pitfalls.md",
+    "golden_path_template": "templates/episode_pattern.json"
   },
   "install": {
     "self_bootstrap": true,
@@ -203,9 +213,9 @@
       "Procedural media generation (audio, narrative, code, video) at factory scale, entirely in-house with no external API keys"
     ]
   },
-  "updated_at": 1787401000000,
+  "updated_at": 1787890000000,
   "verification_date": "2026-08-22",
-  "verification_status": "Clean package verified: skill scripts + agents + docs present, JSON valid, install.ps1 downloads + installs engine from public release, all 8 verification checks pass on a fresh install. Operator playbook moved to references/INSTRUCTIONS.md following the Mavis/Claude 3-level loading convention; SKILL.md kept lean for always-on trigger detection. Engine v0.1.7+ writes state to $env:VORTEX_HOME (default %APPDATA%\\Vortex-OS) so outputs survive skill updates; engine v0.1.8+ groups deliverables by project name; skill v0.1.5+ auto-updates the engine on every invocation (rate-limited, opt-out). SKILL.md description rewritten in v0.1.6 to be capability-driven and universal (no product names); trigger conditions match observable prompt characteristics.",
+  "verification_status": "Clean package verified: skill scripts + agents + docs present, JSON valid, install.ps1 downloads + installs engine from public release, all 8 verification checks pass on a fresh install. Operator playbook moved to references/INSTRUCTIONS.md following the Mavis/Claude 3-level loading convention; SKILL.md kept lean for always-on trigger detection. Engine v0.1.7+ writes state to $env:VORTEX_HOME (default %APPDATA%\\Vortex-OS) so outputs survive skill updates; engine v0.1.8+ groups deliverables by project name; skill v0.1.5+ auto-updates the engine on every invocation (rate-limited, opt-out). SKILL.md description rewritten in v0.1.6 to be capability-driven and universal (no product names); trigger conditions match observable prompt characteristics. Skill v0.1.7 ships an 11-slide HTML walkthrough (walkthrough/index.html), references/architecture.md (7 Mermaid diagrams), 3 idea docs, uninstall.ps1, and templates/episode_pattern.json. Engine v0.1.9 adds --package, --dispatch-template, --decision-record, --decision-list (33 PowerShell end-to-end tests pass).",
   "verified": true,
-  "version": "0.1.6"
+  "version": "0.1.7"
 }

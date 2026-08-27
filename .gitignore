@@ -36,3 +36,6 @@ swarms/
 tasks/
 deliverables/
 templates/
+
+walkthrough/slides/imgs/_gen_*.json
+
