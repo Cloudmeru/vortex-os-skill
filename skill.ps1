@@ -1,5 +1,5 @@
 # =============================================================================
-# skill.ps1 — VORTEX-OS dispatcher entry point (PowerShell 7+, v0.1.10)
+# skill.ps1 — VORTEX-OS dispatcher entry point (PowerShell 7+, v0.1.11)
 # =============================================================================
 # Thin routing layer for the C++/CLI engine (Vortex.dll). The engine is the
 # ONLY implementation of every command; this script:
@@ -8,6 +8,9 @@
 #   3. Forwards the user's args
 #   4. Surfaces the Tier-2 LLM-as-engine fallback banner if the engine is missing
 #   5. Handles two maintenance flags: --health and --recover-engine
+#   6. Short-circuits --audit-trail to the rich PowerShell viewer
+#      (lib/Vortex.AuditViewer.psm1) so the operator gets tree / selfheal /
+#      hitl / json / html output instead of the engine's basic dump.
 #
 # The C++/CLI engine is the canonical implementation of every command. There
 # is NO parallel PowerShell implementation of any command. Per user direction
@@ -34,11 +37,18 @@ param(
 
     [switch] $Force,
 
-    # Override the project name (defaults to auto-deriving from the
-    # objective file path or $env:VORTEX_PROJECT). The deliverables
-    # for this dispatch will land at
-    #   $env:VORTEX_HOME\deliverables\<Project>\
-    [string] $Project,
+    # Audit viewer output format. Only consulted when --audit-trail is in
+    # $Arguments. Single-word flag, so no alias needed.
+    [ValidateSet('','table','tree','selfheal','hitl','json','html')]
+    [string] $AuditFormat = '',
+
+    # Note: we deliberately do NOT declare [string] $Project. The engine
+    # accepts --project <slug> as a positional engine arg; declaring it
+    # here would make PowerShell greedily bind --project (and silently
+    # swallow it), which breaks the dispatcher's argv passthrough.
+    # Callers set the project via $env:VORTEX_PROJECT (or by passing
+    # --project=foo directly to the engine, which survives the
+    # [ValueFromRemainingArguments] pass-through below).
 
     # All other args (the engine args) are captured here.
     [Parameter(ValueFromRemainingArguments = $true)]
@@ -78,7 +88,7 @@ function Show-Tier2Banner {
 
 # --- 0. Env setup -------------------------------------------------------------
 $env:VORTEX_SKILL_ROOT = $here
-if ($Project) { $env:VORTEX_PROJECT = $Project }
+# (Project is no longer a wrapper param — see the top-of-file note.)
 
 # --- 0a. PS7+ guard -----------------------------------------------------------
 if ($PSVersionTable.PSEdition -ne 'Core' -or $PSVersionTable.PSVersion.Major -lt 7) {
@@ -245,7 +255,51 @@ try {
     exit 2
 }
 
-# --- 5. Dispatch ------------------------------------------------------------
+# --- 5. --audit-trail short-circuit (use the rich PowerShell viewer) --------
+# If the caller asked for the audit trail, hand off to the viewer module
+# instead of letting the engine's basic --audit-trail dump mix with the
+# rich output. The viewer supports table / tree / selfheal / hitl / json
+# / html formats and filters by -Project / -Task / -Agent / -Severity /
+# -Since / -Last. Without --AuditFormat we default to 'table'.
+if ($Arguments -and ($Arguments -contains '--audit-trail')) {
+    $viewer = Join-Path $here 'lib\Vortex.AuditViewer.psm1'
+    if (-not (Test-Path $viewer)) {
+        Write-Host "ERROR: audit viewer module missing at $viewer" -ForegroundColor Red
+        exit 2
+    }
+    Import-Module $viewer -Force -ErrorAction Stop
+
+    # Build the viewer's parameter splat. Default to 'table' if the caller
+    # didn't pick a format. Any filter args (--project, --task, --agent,
+    # --severity, --since, --last) are picked up by name from $Arguments
+    # via PowerShell's splat-binding rules.
+    $fmt = if ($AuditFormat) { $AuditFormat } else { 'table' }
+    $splat = @{ Format = $fmt }
+
+    # Translate the kebab-case CLI args into PowerShell parameter names.
+    for ($i = 0; $i -lt $Arguments.Count; $i++) {
+        $a = $Arguments[$i]
+        switch -Regex ($a) {
+            '^--project=(.+)$'   { $splat['Project']  = $Matches[1]; $Arguments[$i] = $null; continue }
+            '^--project$'        { if ($i + 1 -lt $Arguments.Count) { $splat['Project'] = $Arguments[$i + 1]; $Arguments[$i + 1] = $null; $Arguments[$i] = $null; $i++ }; continue }
+            '^--task=(.+)$'      { $splat['Task']     = $Matches[1]; $Arguments[$i] = $null; continue }
+            '^--task$'           { if ($i + 1 -lt $Arguments.Count) { $splat['Task'] = $Arguments[$i + 1]; $Arguments[$i + 1] = $null; $Arguments[$i] = $null; $i++ }; continue }
+            '^--agent=(.+)$'     { $splat['Agent']    = $Matches[1]; $Arguments[$i] = $null; continue }
+            '^--agent$'          { if ($i + 1 -lt $Arguments.Count) { $splat['Agent'] = $Arguments[$i + 1]; $Arguments[$i + 1] = $null; $Arguments[$i] = $null; $i++ }; continue }
+            '^--severity=(.+)$'  { $splat['Severity'] = $Matches[1]; $Arguments[$i] = $null; continue }
+            '^--severity$'       { if ($i + 1 -lt $Arguments.Count) { $splat['Severity'] = $Arguments[$i + 1]; $Arguments[$i + 1] = $null; $Arguments[$i] = $null; $i++ }; continue }
+            '^--since=(.+)$'     { $splat['Since']    = $Matches[1]; $Arguments[$i] = $null; continue }
+            '^--since$'          { if ($i + 1 -lt $Arguments.Count) { $splat['Since'] = $Arguments[$i + 1]; $Arguments[$i + 1] = $null; $Arguments[$i] = $null; $i++ }; continue }
+            '^--last=(\d+)$'     { $splat['Last']     = [int]$Matches[1]; $Arguments[$i] = $null; continue }
+            '^--last$'           { if ($i + 1 -lt $Arguments.Count) { $splat['Last'] = [int]$Arguments[$i + 1]; $Arguments[$i + 1] = $null; $Arguments[$i] = $null; $i++ }; continue }
+        }
+    }
+
+    Get-VortexAuditTrail @splat
+    exit 0
+}
+
+# --- 6. Dispatch ------------------------------------------------------------
 # Invoke-Vortex is the thin wrapper the Vortex.psm1 module exports. The
 # engine is the canonical implementation of every command. Forward argv.
 Invoke-Vortex -Arguments $Arguments
