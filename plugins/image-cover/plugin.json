@@ -1,0 +1,24 @@
+{
+  "name": "image-cover",
+  "version": "1.0.0",
+  "author": "VORTEX-OS",
+  "license": "MIT",
+  "description": "Cover art for the deliverable. Wraps MiniMax-Image.",
+  "capability": "image",
+  "inputs": {
+    "prompt":  { "type": "string",  "required": true,  "description": "Cover art brief" },
+    "title":   { "type": "string",  "required": false, "description": "Title text to overlay" },
+    "style":   { "type": "string",  "required": false, "default": "cinematic", "enum": ["cinematic", "minimalist", "vintage", "modern", "abstract"] },
+    "aspect":  { "type": "string",  "required": false, "default": "16:9", "enum": ["16:9", "3:4", "1:1", "9:16"] }
+  },
+  "outputs": {
+    "file":   { "type": "string", "description": "Absolute path to the generated image" },
+    "width":  { "type": "integer", "description": "Pixel width" },
+    "height": { "type": "integer", "description": "Pixel height" }
+  },
+  "command": {
+    "type": "powershell",
+    "entry": "invoke.ps1",
+    "timeout_s": 300
+  }
+}

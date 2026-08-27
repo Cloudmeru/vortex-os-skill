@@ -1,0 +1,21 @@
+{
+  "name": "image-map",
+  "version": "1.0.0",
+  "author": "VORTEX-OS",
+  "license": "MIT",
+  "description": "Map / location art. Wraps MiniMax-Image.",
+  "capability": "image",
+  "inputs": {
+    "location":  { "type": "string", "required": true,  "description": "Place / region / setting to draw" },
+    "style":     { "type": "string", "required": false, "default": "topographic", "enum": ["topographic", "satellite", "fantasy", "noir", "blueprint"] },
+    "labels":    { "type": "string", "required": false, "description": "Comma-separated list of place labels to mark" }
+  },
+  "outputs": {
+    "file":   { "type": "string", "description": "Absolute path to the generated image" }
+  },
+  "command": {
+    "type": "powershell",
+    "entry": "invoke.ps1",
+    "timeout_s": 300
+  }
+}

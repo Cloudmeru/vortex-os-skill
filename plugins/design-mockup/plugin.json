@@ -1,0 +1,22 @@
+{
+  "name": "design-mockup",
+  "version": "1.0.0",
+  "author": "VORTEX-OS",
+  "license": "MIT",
+  "description": "UI mockups and design specs. Wraps MiniMax-Image.",
+  "capability": "design",
+  "inputs": {
+    "spec":     { "type": "string",  "required": true,  "description": "The design spec (sections, copy, intent)" },
+    "style":    { "type": "string",  "required": false, "default": "modern-minimal", "enum": ["modern-minimal", "skeuomorphic", "neumorphism", "brutalist", "editorial"] },
+    "platform": { "type": "string",  "required": false, "default": "web", "enum": ["web", "mobile", "tablet", "desktop", "watch"] }
+  },
+  "outputs": {
+    "file":  { "type": "string", "description": "Absolute path to the generated mockup image" },
+    "notes": { "type": "string", "description": "Design notes (typography, color, layout decisions)" }
+  },
+  "command": {
+    "type": "powershell",
+    "entry": "invoke.ps1",
+    "timeout_s": 300
+  }
+}

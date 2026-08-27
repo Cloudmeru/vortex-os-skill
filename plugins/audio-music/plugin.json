@@ -1,0 +1,24 @@
+{
+  "name": "audio-music",
+  "version": "1.0.0",
+  "author": "VORTEX-OS",
+  "license": "MIT",
+  "description": "Background music loops from a style + duration. Wraps MiniMax-Music.",
+  "capability": "audio",
+  "inputs": {
+    "prompt":      { "type": "string",  "required": true,  "description": "Style / mood / instrumentation brief" },
+    "duration_s":  { "type": "integer", "required": false, "default": 30, "description": "Loop length in seconds" },
+    "bpm":         { "type": "integer", "required": false, "description": "Optional target tempo" },
+    "format":      { "type": "string",  "required": false, "default": "wav", "enum": ["wav", "mp3"] }
+  },
+  "outputs": {
+    "file":       { "type": "string", "description": "Absolute path to the generated audio file" },
+    "duration_s": { "type": "number", "description": "Actual duration in seconds" },
+    "format":     { "type": "string", "description": "The file format" }
+  },
+  "command": {
+    "type": "powershell",
+    "entry": "invoke.ps1",
+    "timeout_s": 300
+  }
+}

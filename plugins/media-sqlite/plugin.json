@@ -1,0 +1,22 @@
+{
+  "name": "media-sqlite",
+  "version": "1.0.0",
+  "author": "VORTEX-OS",
+  "license": "MIT",
+  "description": "Local SQLite wrapper. Runs a SQL query against a database and returns the rows as JSON. No LLM.",
+  "capability": "data",
+  "inputs": {
+    "db":      { "type": "string", "required": true,  "description": "Absolute path to the SQLite database file" },
+    "query":   { "type": "string", "required": true,  "description": "The SQL query to run" },
+    "params":  { "type": "array",  "required": false, "items": { "type": "string" }, "description": "Optional positional parameters" }
+  },
+  "outputs": {
+    "rows":  { "type": "array",   "items": { "type": "object" }, "description": "Result rows as objects" },
+    "count": { "type": "integer", "description": "Number of rows returned" }
+  },
+  "command": {
+    "type": "powershell",
+    "entry": "invoke.ps1",
+    "timeout_s": 60
+  }
+}

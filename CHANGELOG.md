@@ -4,6 +4,27 @@ All notable changes to the VORTEX-OS skill package are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.2.1] - 2026-08-27
+
+### Added
+- **11 additional reference plugins** under `plugins/` (total 17 plugins):
+  - `audio-music` — background music loops
+  - `audio-voice` — text-to-speech narration
+  - `image-cover` — cover art
+  - `image-map` — map / location art
+  - `code-python` — Python code generation
+  - `video-hailuo` — cinematic video clips
+  - `video-animator` — animation / motion graphics
+  - `data-researcher` — web research + report synthesis
+  - `data-analyst` — data crunching + chart generation
+  - `design-mockup` — UI mockups + design notes
+  - `media-sqlite` — local SQLite wrapper (no LLM)
+
+### Engine dependency
+- Requires [vortex-os-dotnet v0.2.1](https://github.com/Cloudmeru/vortex-os-dotnet/releases/tag/v0.2.1)
+  which adds the `--plugin-install <github-url>` command. Download + install
+  community plugins from any GitHub repo that follows the plugin contract.
+
 ## [0.2.0] - 2026-08-27
 
 ### Added
