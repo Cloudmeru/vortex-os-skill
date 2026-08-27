@@ -38,9 +38,11 @@ param(
     [switch] $Force,
 
     # Audit viewer output format. Only consulted when --audit-trail is in
-    # $Arguments. Single-word flag, so no alias needed.
-    [ValidateSet('','table','tree','selfheal','hitl','json','html')]
-    [string] $AuditFormat = '',
+    # $Arguments. Pulled out of $Arguments below (after param binding) so
+    # we don't expose it as a wrapper param — that would let PowerShell
+    # greedily bind unrelated string args (like "--version") to it via
+    # the default position-based binding rule.
+    # (No wrapper param declared here — see the post-binding parse below.)
 
     # Note: we deliberately do NOT declare [string] $Project. The engine
     # accepts --project <slug> as a positional engine arg; declaring it
@@ -261,6 +263,35 @@ try {
 # rich output. The viewer supports table / tree / selfheal / hitl / json
 # / html formats and filters by -Project / -Task / -Agent / -Severity /
 # -Since / -Last. Without --AuditFormat we default to 'table'.
+#
+# We parse --AuditFormat out of $Arguments rather than declaring it as a
+# wrapper param: declaring `[string] $AuditFormat` here would let
+# PowerShell greedily bind the first positional string arg (e.g. `--version`)
+# to it via the default position-based binding rule, which broke
+# `skill.ps1 --version`. The wrapper's only named args are the maintenance
+# switches; everything else flows through to the engine / viewer.
+$AuditFormat = ''
+if ($Arguments) {
+    for ($i = 0; $i -lt $Arguments.Count; $i++) {
+        $a = $Arguments[$i]
+        if ($a -eq '--AuditFormat' -or $a -eq '-AuditFormat') {
+            if ($i + 1 -lt $Arguments.Count) {
+                $AuditFormat = $Arguments[$i + 1]
+                $Arguments[$i] = $null
+                $Arguments[$i + 1] = $null
+                $i++
+            }
+        } elseif ($a -match '^--AuditFormat=(.+)$' -or $a -match '^-AuditFormat=(.+)$') {
+            $AuditFormat = $Matches[1]
+            $Arguments[$i] = $null
+        }
+    }
+    $Arguments = @($Arguments | Where-Object { $_ -ne $null })
+    # Validate
+    if ($AuditFormat -and $AuditFormat -notin @('table','tree','selfheal','hitl','json','html')) {
+        throw "--AuditFormat must be one of: table, tree, selfheal, hitl, json, html (got '$AuditFormat')"
+    }
+}
 if ($Arguments -and ($Arguments -contains '--audit-trail')) {
     $viewer = Join-Path $here 'lib\Vortex.AuditViewer.psm1'
     if (-not (Test-Path $viewer)) {

@@ -150,10 +150,12 @@ function Format-AuditTable {
         Write-Host ("  {0,-23}  {1,-4}  {2,-26}  {3,-22}  {4,-14}  {5,-10}  {6}" -f $e.ts, $e.tier, $e.agent, $e.action, $e.status, $sev, $tid)
         # Show rule violation/fix as a sub-line so the simple table still
         # surfaces the most important self-heal context without needing
-        # the operator to switch to --format selfheal.
-        if ($e.rule_violated) { Write-Host ("     ↳ VIOLATED: {0}" -f $e.rule_violated) -ForegroundColor Red }
-        if ($e.rule_fixed)    { Write-Host ("     ↳ FIXED:    {0}" -f $e.rule_fixed)    -ForegroundColor Green }
-        if ($e.gate_id)       { Write-Host ("     ↳ GATE:     {0}" -f $e.gate_id)       -ForegroundColor Magenta }
+        # the operator to switch to --format selfheal. We use ASCII arrows
+        # here (not ↳) because Windows console hosts render the Unicode
+        # char as '?' on legacy code pages.
+        if ($e.rule_violated) { Write-Host ("     -> VIOLATED: {0}" -f $e.rule_violated) -ForegroundColor Red }
+        if ($e.rule_fixed)    { Write-Host ("     -> FIXED:    {0}" -f $e.rule_fixed)    -ForegroundColor Green }
+        if ($e.gate_id)       { Write-Host ("     -> GATE:     {0}" -f $e.gate_id)       -ForegroundColor Magenta }
     }
     Write-Host ""
     Write-Host ("  Total: {0} event(s)" -f $Events.Count)
