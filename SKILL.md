@@ -1,7 +1,7 @@
 ---
 name: VORTEX-OS
-display_name: VORTEX-OS — Multi-Agent Orchestration Engine
-version: 0.1.6
+display_name: VORTEX-OS - Multi-Agent Orchestration Engine
+version: 0.1.7
 description: |
   VORTEX-OS is a self-bootstrapping PowerShell skill that drives the
   [Cloudmeru/vortex-os-dotnet](https://github.com/Cloudmeru/vortex-os-dotnet)
@@ -153,18 +153,25 @@ This skill folder is laid out as follows. Read only what you need.
 |---|---|---|
 | `SKILL.md` (this file) | Lean entry point: **what + when + how to invoke** | Always, on every trigger (~5 KB) |
 | `references/INSTRUCTIONS.md` | **Operator playbook** — full walkthrough, HITL protocol, Continuity Engine handling, error codes, 4-tier mental model, the 8 contract invariants, end-to-end example | When you need the details (~20 KB, loaded on demand) |
+| `references/architecture.md` | **Mermaid architecture diagrams** — 7 diagrams (big picture, 4-tier chain, storage split, install flow, dispatch+HITL flow, auto-update, data lifecycle) + component reference | When you need the visual mental model (~16 KB, loaded on demand) |
 | `README.md` | **User-facing landing page** — install flow, full command reference, 4-tier diagram, license | When the user is new to VORTEX-OS or asks for the public overview |
 | `COMPATIBILITY.md` | **Multi-code-agent support** matrix + the 4-line install contract | When a code agent (minimax code, hermes, etc.) needs to know how to drive the skill |
 | `CHANGELOG.md` | Per-version changes | When the user asks "what changed in v0.1.2?" |
 | `_meta.json` | **Platform metadata** (skill_id, version, capabilities, install flow) | When the platform introspects the skill for registration / discovery |
+| `walkthrough/` | **Visual HTML walkthrough** — 11 slides, auto-advancing viewer, MP4 recording recipe (PowerShell + Edge + ffmpeg). Open `walkthrough/index.html` in a browser | When you want a 5-minute visual tour of the skill before reading |
+| `idea-future-recommendations.md` | 18 prioritized next-version items + 12 known gaps + 5 open questions | When planning v0.1.7+ roadmap |
+| `idea-architecture-decisions.md` | 15 Architecture Decision Records (engine choice, two-root storage, user-scope install, self-bootstrapping, etc.) | When you need to know *why* a design decision was made |
+| `idea-faq-and-pitfalls.md` | 30+ Q&As across 10 categories (install, storage, HITL, self-heal, manifest, audio, etc.) | When something is broken and you need a fast answer |
 | `skill.ps1` | **The one-shot CLI entry point.** Self-bootstrapping: auto-installs the engine on first run. This is the primary command for any code agent | Always invoke this to dispatch a command |
 | `install.ps1` | **The engine installer** (downloads from the GitHub release). Run `skill.ps1 -Install` or this directly | When the user wants to pin a specific engine version or pre-stage the install |
 | `install-deps.ps1` | **System-dependency installer** (uses `winget` to install `sqlite3` and optionally `ffmpeg`). Reads the dep list from `_meta.json.winget_install_ids` | Run on a fresh machine before the first dispatch, if `verify.ps1` reports missing tools |
 | `auto-update.ps1` | **Engine self-updater**. Queries GitHub for the latest `vortex-os-dotnet` release (rate-limited to once per 6 h per `VORTEX_HOME`) and calls `install.ps1` if a newer version is available. Opt out with `$env:VORTEX_NO_AUTO_UPDATE=1`. Called automatically by `skill.ps1` on every invocation | First run per day, or after a long pause |
 | `migrate-state.ps1` | **One-time migration** of legacy state (deliverables, audit log, swarms, state) from the skill folder to `$env:VORTEX_HOME` (default `%APPDATA%\Vortex-OS`). Idempotent, dry-run with `-WhatIf`, has `-AdoptFlat` switch to file legacy flat deliverables into `deliverables/_unfiled/` after upgrading to v0.1.5+ | Run ONCE after upgrading to skill v0.1.4+ to move existing data to the durable location; re-run with `-AdoptFlat` once after upgrading to v0.1.5+ to organize the new per-project layout |
+| `uninstall.ps1` | **Clean removal**. Dry-run by default; flags `-Engine` (remove engine + module), `-State` (remove `%APPDATA%\Vortex-OS`), `-All` (both). The skill folder itself is never auto-deleted | When uninstalling or resetting the environment |
 | `verify.ps1` | **Post-upload verification** (8 checks: file presence, JSON validity, branding, agent discovery, agent lint, help banner, engine installation). Self-bootstrapping | Run before publishing; CI gate |
 | `build.ps1` | **Source-build helper** for forkers (downloads + compiles the .NET engine from `vortex-os-dotnet`) | Only if you've cloned this skill to fork the engine |
 | `agents/` | **3 supervisor/inspector manifest files** (the engine's input) | When writing custom agent manifests |
+| `templates/` | Golden Path episode template (engine reads it when `--dispatch-template` is passed) | When designing a multi-episode / series workflow |
 
 ---
 

@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VORTEX-OS — Walkthrough</title>
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    background: #0a0a0a;
+    overflow: hidden;
+    font-family: 'Times New Roman', serif;
+  }
+  .viewer {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  .frame {
+    width: 960px;
+    height: 540px;
+    border: 0;
+    transform-origin: center center;
+  }
+  .controls {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 56px;
+    background: #0a0a0a;
+    border-top: 1px solid #2e2e2e;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+    color: #a3a3a3;
+    font-size: 13px;
+    z-index: 10;
+  }
+  .controls .progress {
+    flex: 1;
+    margin: 0 24px;
+    height: 4px;
+    background: #1f1f1f;
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .controls .progress-bar {
+    height: 100%;
+    background: #D4AF37;
+    transition: width 0.3s ease;
+  }
+  .controls button {
+    background: #0070F3;
+    color: #ffffff;
+    border: 0;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .controls button:disabled {
+    background: #2e2e2e;
+    color: #737373;
+    cursor: not-allowed;
+  }
+  .controls .slide-meta {
+    min-width: 100px;
+    color: #D4AF37;
+    font-weight: 600;
+  }
+  .autoplay-indicator {
+    position: fixed;
+    top: 16px;
+    right: 24px;
+    background: rgba(212, 175, 55, 0.15);
+    color: #D4AF37;
+    border: 1px solid #D4AF37;
+    border-radius: 4px;
+    padding: 6px 12px;
+    font-size: 12px;
+    z-index: 10;
+    display: none;
+  }
+  .autoplay-indicator.active {
+    display: block;
+  }
+</style>
+<script>
+  const TOTAL = 11;
+  const SLIDE_DURATION_MS = 6000;
+  let current = 1;
+  let autoplayInterval = null;
+
+  function showSlide(n) {
+    if (n < 1 || n > TOTAL) return;
+    current = n;
+    document.getElementById('frame').src = `slides/slide-${String(n).padStart(2, '0')}.html`;
+    document.getElementById('counter').textContent = `${String(n).padStart(2, '0')} / ${String(TOTAL).padStart(2, '0')}`;
+    document.getElementById('progress-bar').style.width = `${(n / TOTAL) * 100}%`;
+    document.getElementById('prev').disabled = n === 1;
+    document.getElementById('next').disabled = n === TOTAL;
+  }
+
+  function scaleFrame() {
+    const frame = document.querySelector('.frame');
+    if (!frame) return;
+    const slideW = 960;
+    const slideH = 540;
+    const controlsH = 56;
+    const availW = window.innerWidth;
+    const availH = window.innerHeight - controlsH;
+    const scaleX = availW / slideW;
+    const scaleY = availH / slideH;
+    const scale = Math.min(scaleX, scaleY);
+    frame.style.width = slideW + 'px';
+    frame.style.height = slideH + 'px';
+    frame.style.transform = `scale(${scale})`;
+  }
+
+  function toggleAutoplay() {
+    const indicator = document.getElementById('autoplay');
+    if (autoplayInterval) {
+      clearInterval(autoplayInterval);
+      autoplayInterval = null;
+      indicator.classList.remove('active');
+    } else {
+      indicator.classList.add('active');
+      autoplayInterval = setInterval(() => {
+        if (current >= TOTAL) {
+          toggleAutoplay();
+          return;
+        }
+        showSlide(current + 1);
+      }, SLIDE_DURATION_MS);
+    }
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === ' ') {
+      e.preventDefault();
+      showSlide(Math.min(current + 1, TOTAL));
+    } else if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      showSlide(Math.max(current - 1, 1));
+    } else if (e.key === 'Home') {
+      showSlide(1);
+    } else if (e.key === 'End') {
+      showSlide(TOTAL);
+    } else if (e.key.toLowerCase() === 'a') {
+      toggleAutoplay();
+    }
+  });
+
+  window.addEventListener('load', () => {
+    scaleFrame();
+    showSlide(1);
+  });
+  window.addEventListener('resize', scaleFrame);
+</script>
+</head>
+<body>
+  <div class="viewer">
+    <iframe id="frame" class="frame" src="slides/slide-01.html"></iframe>
+  </div>
+  <div class="autoplay-indicator" id="autoplay">▶ Autoplay (6s per slide)</div>
+  <div class="controls">
+    <button id="prev" onclick="showSlide(current - 1)">← Prev</button>
+    <div class="progress"><div class="progress-bar" id="progress-bar"></div></div>
+    <span class="slide-meta" id="counter">01 / 11</span>
+    <button onclick="toggleAutoplay()" id="autoplay-btn">▶ Autoplay</button>
+    <button id="next" onclick="showSlide(current + 1)">Next →</button>
+  </div>
+</body>
+</html>

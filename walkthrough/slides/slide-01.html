@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VORTEX-OS — Walkthrough</title>
+<style>
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #000;
+}
+.slide-content {
+  width: 960px;
+  height: 540px;
+  position: relative;
+  transform-origin: center center;
+}
+</style>
+<script>
+function scaleSlide() {
+  const slide = document.querySelector('.slide-content');
+  if (!slide) return;
+  const slideWidth = 960;
+  const slideHeight = 540;
+  const scaleX = window.innerWidth / slideWidth;
+  const scaleY = window.innerHeight / slideHeight;
+  const scale = Math.min(scaleX, scaleY);
+  slide.style.width = slideWidth + 'px';
+  slide.style.height = slideHeight + 'px';
+  slide.style.transform = `scale(${scale})`;
+  slide.style.transformOrigin = 'center center';
+  slide.style.flexShrink = '0';
+}
+window.addEventListener('load', scaleSlide);
+window.addEventListener('resize', scaleSlide);
+</script>
+</head>
+<body>
+<div class="slide-content" style="background:#0a0a0a; font-family:'Times New Roman', serif;">
+
+  <!-- Background hero image (right side) -->
+  <img src="imgs/cover_hero.jpg" alt="" style="position:absolute; right:0; top:0; width:600px; height:540px; object-fit:cover; opacity:0.95;">
+
+  <!-- Subtle dark gradient on left for text legibility (using solid overlay only, no CSS gradient) -->
+  <svg width="480" height="540" style="position:absolute; left:0; top:0;" aria-hidden="true">
+    <rect x="0" y="0" width="480" height="540" fill="#0a0a0a" fill-opacity="0.85"/>
+    <rect x="360" y="0" width="120" height="540" fill="#0a0a0a" fill-opacity="0.3"/>
+  </svg>
+
+  <!-- Gold accent bar (top-left) -->
+  <svg width="6" height="120" style="position:absolute; left:60px; top:120px;" aria-hidden="true">
+    <rect x="0" y="0" width="6" height="120" fill="#D4AF37"/>
+  </svg>
+
+  <!-- Eyebrow label -->
+  <p style="position:absolute; left:84px; top:128px; margin:0; font-size:14px; font-weight:600; letter-spacing:6px; color:#D4AF37;">WALKTHROUGH v0.1.7</p>
+
+  <!-- Main title -->
+  <p style="position:absolute; left:60px; top:170px; margin:0; font-size:84px; font-weight:700; line-height:1.0; color:#ffffff; letter-spacing:-1px;">VORTEX-OS</p>
+
+  <!-- Subtitle -->
+  <p style="position:absolute; left:60px; top:270px; margin:0; font-size:26px; font-weight:400; line-height:1.2; color:#f5f5f5; max-width:420px;">Self-Bootstrapping<br>Multi-Agent Creative<br>Orchestrator</p>
+
+  <!-- Divider -->
+  <svg width="80" height="2" style="position:absolute; left:60px; top:430px;" aria-hidden="true">
+    <rect x="0" y="0" width="80" height="2" fill="#0070F3"/>
+  </svg>
+
+  <!-- Meta line -->
+  <p style="position:absolute; left:60px; top:450px; margin:0; font-size:13px; color:#a3a3a3;">Engine v0.1.9 · Skill v0.1.7 · 11 slides · ~5 min read</p>
+  <p style="position:absolute; left:60px; top:472px; margin:0; font-size:13px; color:#737373;">Cross-platform PowerShell · .NET 10 · Human-in-the-Loop</p>
+
+  <!-- Bottom-right gold mark -->
+  <svg width="40" height="40" viewBox="0 0 40 40" style="position:absolute; right:32px; bottom:24px;" aria-hidden="true">
+    <circle cx="20" cy="20" r="18" fill="none" stroke="#D4AF37" stroke-width="2"/>
+    <text x="20" y="20" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="700" fill="#D4AF37" font-family="Times New Roman, serif">V</text>
+  </svg>
+
+</div>
+</body>
+</html>

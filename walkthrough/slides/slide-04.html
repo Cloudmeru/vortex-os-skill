@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Why multi-agent pipelines are hard</title>
+<style>
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #000;
+}
+.slide-content {
+  width: 960px;
+  height: 540px;
+  position: relative;
+  transform-origin: center center;
+}
+</style>
+<script>
+function scaleSlide() {
+  const slide = document.querySelector('.slide-content');
+  if (!slide) return;
+  const slideWidth = 960;
+  const slideHeight = 540;
+  const scaleX = window.innerWidth / slideWidth;
+  const scaleY = window.innerHeight / slideHeight;
+  const scale = Math.min(scaleX, scaleY);
+  slide.style.width = slideWidth + 'px';
+  slide.style.height = slideHeight + 'px';
+  slide.style.transform = `scale(${scale})`;
+  slide.style.transformOrigin = 'center center';
+  slide.style.flexShrink = '0';
+}
+window.addEventListener('load', scaleSlide);
+window.addEventListener('resize', scaleSlide);
+</script>
+</head>
+<body>
+<div class="slide-content" style="background:#ffffff; font-family:'Times New Roman', serif;">
+
+  <!-- Title -->
+  <p style="position:absolute; left:60px; top:48px; margin:0; font-size:14px; font-weight:600; letter-spacing:4px; color:#0070F3;">THE PROBLEM</p>
+  <p style="position:absolute; left:60px; top:72px; margin:0; font-size:36px; font-weight:700; color:#0a0a0a; line-height:1.0;">Why multi-agent pipelines are hard</p>
+
+  <!-- Divider -->
+  <svg width="60" height="3" style="position:absolute; left:60px; top:124px;" aria-hidden="true">
+    <rect x="0" y="0" width="60" height="3" fill="#D4AF37"/>
+  </svg>
+
+  <!-- Left column: 3 problem points with icons -->
+  <!-- Point 1: Context loss -->
+  <svg width="40" height="40" viewBox="0 0 40 40" style="position:absolute; left:60px; top:170px;" aria-hidden="true">
+    <circle cx="20" cy="20" r="20" fill="#E0EFFF"/>
+    <text x="20" y="20" text-anchor="middle" dominant-baseline="central" font-size="18" font-weight="700" fill="#0070F3" font-family="Times New Roman, serif">1</text>
+  </svg>
+  <p style="position:absolute; left:120px; top:172px; margin:0; font-size:18px; font-weight:600; color:#0a0a0a;">Context evaporates between agents</p>
+  <p style="position:absolute; left:120px; top:198px; margin:0; font-size:13px; color:#525252; max-width:380px; line-height:1.4;">Each agent sees only its own input/output. The script drifts, characters contradict each other, lore is forgotten by the third draft.</p>
+
+  <!-- Point 2: Manual gates -->
+  <svg width="40" height="40" viewBox="0 0 40 40" style="position:absolute; left:60px; top:270px;" aria-hidden="true">
+    <circle cx="20" cy="20" r="20" fill="#E0EFFF"/>
+    <text x="20" y="20" text-anchor="middle" dominant-baseline="central" font-size="18" font-weight="700" fill="#0070F3" font-family="Times New Roman, serif">2</text>
+  </svg>
+  <p style="position:absolute; left:120px; top:272px; margin:0; font-size:18px; font-weight:600; color:#0a0a0a;">Human gates get skipped under pressure</p>
+  <p style="position:absolute; left:120px; top:298px; margin:0; font-size:13px; color:#525252; max-width:380px; line-height:1.4;">A 7-deliverable pipeline has 6 mid-pipeline approvals. When the operator is tired, gates get auto-approved and bad output ships.</p>
+
+  <!-- Point 3: No self-heal -->
+  <svg width="40" height="40" viewBox="0 0 40 40" style="position:absolute; left:60px; top:370px;" aria-hidden="true">
+    <circle cx="20" cy="20" r="20" fill="#E0EFFF"/>
+    <text x="20" y="20" text-anchor="middle" dominant-baseline="central" font-size="18" font-weight="700" fill="#0070F3" font-family="Times New Roman, serif">3</text>
+  </svg>
+  <p style="position:absolute; left:120px; top:372px; margin:0; font-size:18px; font-weight:600; color:#0a0a0a;">Continuity errors repeat forever</p>
+  <p style="position:absolute; left:120px; top:398px; margin:0; font-size:13px; color:#525252; max-width:380px; line-height:1.4;">"Tone is suddenly formal" or "the protagonist is on the wrong ship" — the same violations show up in every dispatch unless someone re-prompted by hand.</p>
+
+  <!-- Right column: hero image -->
+  <img src="imgs/problem_chaos.jpg" alt="Chaotic pipeline" style="position:absolute; right:60px; top:160px; width:380px; height:320px; object-fit:cover; border-radius:6px;">
+
+  <!-- Caption under image -->
+  <p style="position:absolute; right:60px; top:490px; width:380px; margin:0; font-size:11px; color:#737373; text-align:right;">Manual multi-agent pipelines drift, break, and require a tired human to fix them.</p>
+
+  <!-- Page number badge -->
+  <svg style="position:absolute; right:32px; bottom:24px;" width="36" height="36" viewBox="0 0 36 36" aria-hidden="true">
+    <circle cx="18" cy="18" r="18" fill="#0070F3"/>
+    <text x="18" y="18" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="600" fill="#ffffff" font-family="Times New Roman, serif">04</text>
+  </svg>
+
+</div>
+</body>
+</html>

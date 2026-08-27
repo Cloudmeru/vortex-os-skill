@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Self-Heal loop: Continuity Engine + Self-Healing Optimizer</title>
+<style>
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #000;
+}
+.slide-content {
+  width: 960px;
+  height: 540px;
+  position: relative;
+  transform-origin: center center;
+}
+</style>
+<script>
+function scaleSlide() {
+  const slide = document.querySelector('.slide-content');
+  if (!slide) return;
+  const slideWidth = 960;
+  const slideHeight = 540;
+  const scaleX = window.innerWidth / slideWidth;
+  const scaleY = window.innerHeight / slideHeight;
+  const scale = Math.min(scaleX, scaleY);
+  slide.style.width = slideWidth + 'px';
+  slide.style.height = slideHeight + 'px';
+  slide.style.transform = `scale(${scale})`;
+  slide.style.transformOrigin = 'center center';
+  slide.style.flexShrink = '0';
+}
+window.addEventListener('load', scaleSlide);
+window.addEventListener('resize', scaleSlide);
+</script>
+</head>
+<body>
+<div class="slide-content" style="background:#ffffff; font-family:'Times New Roman', serif;">
+
+  <!-- Title -->
+  <p style="position:absolute; left:60px; top:48px; margin:0; font-size:14px; font-weight:600; letter-spacing:4px; color:#0070F3;">DISPATCH & HITL</p>
+  <p style="position:absolute; left:60px; top:72px; margin:0; font-size:36px; font-weight:700; color:#0a0a0a; line-height:1.0;">Continuity Engine + Self-Healing Optimizer</p>
+
+  <!-- Divider -->
+  <svg width="60" height="3" style="position:absolute; left:60px; top:124px;" aria-hidden="true">
+    <rect x="0" y="0" width="60" height="3" fill="#D4AF37"/>
+  </svg>
+
+  <!-- Left column: 4-step loop diagram -->
+  <p style="position:absolute; left:60px; top:150px; margin:0; font-size:12px; color:#737373; letter-spacing:1px;">THE 4-STEP LOOP</p>
+
+  <!-- Step 1: Worker draft -->
+  <svg width="36" height="36" viewBox="0 0 36 36" style="position:absolute; left:60px; top:180px;" aria-hidden="true">
+    <circle cx="18" cy="18" r="18" fill="#0070F3"/>
+    <text x="18" y="18" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="700" fill="#ffffff" font-family="Times New Roman, serif">1</text>
+  </svg>
+  <p style="position:absolute; left:110px; top:182px; margin:0; font-size:15px; font-weight:600; color:#0a0a0a;">Worker draft</p>
+  <p style="position:absolute; left:110px; top:204px; margin:0; font-size:12px; color:#525252;">→ an agent produces the deliverable.</p>
+
+  <!-- Arrow down -->
+  <svg width="16" height="30" viewBox="0 0 16 30" style="position:absolute; left:70px; top:225px;" aria-hidden="true">
+    <path d="M8 0 L8 22 M2 16 L8 22 L14 16" stroke="#0070F3" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+
+  <!-- Step 2: Continuity Engine review (FAIL) -->
+  <svg width="36" height="36" viewBox="0 0 36 36" style="position:absolute; left:60px; top:262px;" aria-hidden="true">
+    <circle cx="18" cy="18" r="18" fill="#D4AF37"/>
+    <text x="18" y="18" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="700" fill="#0a0a0a" font-family="Times New Roman, serif">2</text>
+  </svg>
+  <p style="position:absolute; left:110px; top:264px; margin:0; font-size:15px; font-weight:600; color:#0a0a0a;">Continuity Engine reviews</p>
+  <p style="position:absolute; left:110px; top:286px; margin:0; font-size:12px; color:#525252;">→ catches a rule violation. Returns FAIL with reason.</p>
+
+  <!-- Arrow down -->
+  <svg width="16" height="30" viewBox="0 0 16 30" style="position:absolute; left:70px; top:307px;" aria-hidden="true">
+    <path d="M8 0 L8 22 M2 16 L8 22 L14 16" stroke="#D4AF37" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+
+  <!-- Step 3: Self-Healing Optimizer -->
+  <svg width="36" height="36" viewBox="0 0 36 36" style="position:absolute; left:60px; top:344px;" aria-hidden="true">
+    <circle cx="18" cy="18" r="18" fill="#0070F3"/>
+    <text x="18" y="18" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="700" fill="#ffffff" font-family="Times New Roman, serif">3</text>
+  </svg>
+  <p style="position:absolute; left:110px; top:346px; margin:0; font-size:15px; font-weight:600; color:#0a0a0a;">Self-Healing Optimizer</p>
+  <p style="position:absolute; left:110px; top:368px; margin:0; font-size:12px; color:#525252;">→ writes state/prompt_optimizations/&lt;agent&gt;_&lt;ts&gt;.json with a hardened prompt.</p>
+
+  <!-- Arrow right (back to step 1) -->
+  <svg width="40" height="16" viewBox="0 0 40 16" style="position:absolute; left:60px; top:400px;" aria-hidden="true">
+    <path d="M0 8 L32 8 M24 2 L32 8 L24 14" stroke="#D4AF37" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+
+  <!-- Step 4: re-dispatch with hardened prompt -->
+  <svg width="36" height="36" viewBox="0 0 36 36" style="position:absolute; left:110px; top:390px;" aria-hidden="true">
+    <circle cx="18" cy="18" r="18" fill="#0070F3"/>
+    <text x="18" y="18" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="700" fill="#ffffff" font-family="Times New Roman, serif">4</text>
+  </svg>
+  <p style="position:absolute; left:160px; top:392px; margin:0; font-size:15px; font-weight:600; color:#0a0a0a;">Re-dispatch with hardened prompt</p>
+  <p style="position:absolute; left:160px; top:414px; margin:0; font-size:12px; color:#525252;">→ same worker, better instructions. PASS.</p>
+
+  <!-- Loop-back arrow (4 -> 1) -->
+  <svg width="460" height="200" viewBox="0 0 460 200" style="position:absolute; left:60px; top:170px; opacity:0.5;" aria-hidden="true">
+    <path d="M180 260 L180 320 L60 320 L60 198 L50 198" stroke="#D4AF37" stroke-width="2" stroke-dasharray="6 4" fill="none"/>
+  </svg>
+
+  <!-- Right column: loop image + stats -->
+  <img src="imgs/selfheal_loop.jpg" alt="Self-heal loop" style="position:absolute; right:60px; top:150px; width:340px; height:220px; object-fit:cover; border-radius:6px;">
+
+  <!-- Stats below image -->
+  <p style="position:absolute; right:60px; top:388px; width:340px; margin:0; font-size:11px; color:#737373; letter-spacing:1px;">TYPICAL FIRST-RUN RESULTS</p>
+
+  <p style="position:absolute; right:60px; top:412px; margin:0; font-size:60px; font-weight:700; color:#0070F3; line-height:1.0;">3.4×</p>
+  <p style="position:absolute; right:200px; top:430px; width:200px; margin:0; font-size:12px; color:#525252; line-height:1.4;">faster-to-green for Episode 2+ when the same dispatch is rerun later.</p>
+
+  <p style="position:absolute; right:60px; top:482px; width:340px; margin:0; font-size:11px; color:#737373; font-style:italic; text-align:right;">Self-heal cycle demonstrated across at least 2 distinct rule violations.</p>
+
+  <!-- Page number badge -->
+  <svg style="position:absolute; right:32px; bottom:24px;" width="36" height="36" viewBox="0 0 36 36" aria-hidden="true">
+    <circle cx="18" cy="18" r="18" fill="#0070F3"/>
+    <text x="18" y="18" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="600" fill="#ffffff" font-family="Times New Roman, serif">10</text>
+  </svg>
+
+</div>
+</body>
+</html>

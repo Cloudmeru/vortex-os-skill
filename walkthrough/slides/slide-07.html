@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Install → Bootstrap → First dispatch</title>
+<style>
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #000;
+}
+.slide-content {
+  width: 960px;
+  height: 540px;
+  position: relative;
+  transform-origin: center center;
+}
+</style>
+<script>
+function scaleSlide() {
+  const slide = document.querySelector('.slide-content');
+  if (!slide) return;
+  const slideWidth = 960;
+  const slideHeight = 540;
+  const scaleX = window.innerWidth / slideWidth;
+  const scaleY = window.innerHeight / slideHeight;
+  const scale = Math.min(scaleX, scaleY);
+  slide.style.width = slideWidth + 'px';
+  slide.style.height = slideHeight + 'px';
+  slide.style.transform = `scale(${scale})`;
+  slide.style.transformOrigin = 'center center';
+  slide.style.flexShrink = '0';
+}
+window.addEventListener('load', scaleSlide);
+window.addEventListener('resize', scaleSlide);
+</script>
+</head>
+<body>
+<div class="slide-content" style="background:#ffffff; font-family:'Times New Roman', serif;">
+
+  <!-- Title -->
+  <p style="position:absolute; left:60px; top:48px; margin:0; font-size:14px; font-weight:600; letter-spacing:4px; color:#0070F3;">INSTALL & BOOTSTRAP</p>
+  <p style="position:absolute; left:60px; top:72px; margin:0; font-size:36px; font-weight:700; color:#0a0a0a; line-height:1.0;">From zero to first dispatch in one command</p>
+
+  <!-- Divider -->
+  <svg width="60" height="3" style="position:absolute; left:60px; top:124px;" aria-hidden="true">
+    <rect x="0" y="0" width="60" height="3" fill="#D4AF37"/>
+  </svg>
+
+  <!-- 4-step horizontal flow -->
+  <!-- Step 1 -->
+  <svg width="170" height="200" viewBox="0 0 170 200" style="position:absolute; left:60px; top:180px;" aria-hidden="true">
+    <rect x="0" y="0" width="170" height="200" rx="8" fill="#f7f7f7" stroke="#0070F3" stroke-width="1.5"/>
+    <rect x="0" y="0" width="170" height="6" fill="#0070F3"/>
+  </svg>
+  <p style="position:absolute; left:60px; top:200px; width:170px; margin:0; font-size:64px; font-weight:700; color:#0070F3; line-height:1.0; text-align:center;">01</p>
+  <p style="position:absolute; left:60px; top:282px; width:170px; margin:0; font-size:15px; font-weight:700; color:#0a0a0a; text-align:center;">install-deps.ps1</p>
+  <p style="position:absolute; left:74px; top:306px; width:142px; margin:0; font-size:12px; color:#525252; text-align:center; line-height:1.4;">Reads _meta.json's<br>winget_install_ids and<br>prompts to install.</p>
+  <p style="position:absolute; left:74px; top:354px; width:142px; margin:0; font-size:11px; color:#737373; text-align:center;">~1 min · requires admin</p>
+
+  <!-- Arrow 1 -->
+  <svg width="40" height="16" viewBox="0 0 40 16" style="position:absolute; left:240px; top:272px;" aria-hidden="true">
+    <path d="M0 8 L32 8 M24 2 L32 8 L24 14" stroke="#0070F3" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+
+  <!-- Step 2 -->
+  <svg width="170" height="200" viewBox="0 0 170 200" style="position:absolute; left:290px; top:180px;" aria-hidden="true">
+    <rect x="0" y="0" width="170" height="200" rx="8" fill="#f7f7f7" stroke="#0070F3" stroke-width="1.5"/>
+    <rect x="0" y="0" width="170" height="6" fill="#0070F3"/>
+  </svg>
+  <p style="position:absolute; left:290px; top:200px; width:170px; margin:0; font-size:64px; font-weight:700; color:#0070F3; line-height:1.0; text-align:center;">02</p>
+  <p style="position:absolute; left:290px; top:282px; width:170px; margin:0; font-size:15px; font-weight:700; color:#0a0a0a; text-align:center;">skill.ps1 -Project</p>
+  <p style="position:absolute; left:304px; top:306px; width:142px; margin:0; font-size:12px; color:#525252; text-align:center; line-height:1.4;">First dispatch call<br>triggers the engine<br>self-bootstrap.</p>
+  <p style="position:absolute; left:304px; top:354px; width:142px; margin:0; font-size:11px; color:#737373; text-align:center;">~30 s on first call</p>
+
+  <!-- Arrow 2 -->
+  <svg width="40" height="16" viewBox="0 0 40 16" style="position:absolute; left:470px; top:272px;" aria-hidden="true">
+    <path d="M0 8 L32 8 M24 2 L32 8 L24 14" stroke="#0070F3" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+
+  <!-- Step 3 -->
+  <svg width="170" height="200" viewBox="0 0 170 200" style="position:absolute; left:520px; top:180px;" aria-hidden="true">
+    <rect x="0" y="0" width="170" height="200" rx="8" fill="#f7f7f7" stroke="#0070F3" stroke-width="1.5"/>
+    <rect x="0" y="0" width="170" height="6" fill="#0070F3"/>
+  </svg>
+  <p style="position:absolute; left:520px; top:200px; width:170px; margin:0; font-size:64px; font-weight:700; color:#0070F3; line-height:1.0; text-align:center;">03</p>
+  <p style="position:absolute; left:520px; top:282px; width:170px; margin:0; font-size:15px; font-weight:700; color:#0a0a0a; text-align:center;">GitHub release</p>
+  <p style="position:absolute; left:534px; top:306px; width:142px; margin:0; font-size:12px; color:#525252; text-align:center; line-height:1.4;">Skill pulls engine<br>Vortex.dll + .psm1<br>from latest release.</p>
+  <p style="position:absolute; left:534px; top:354px; width:142px; margin:0; font-size:11px; color:#737373; text-align:center;">Network required</p>
+
+  <!-- Arrow 3 -->
+  <svg width="40" height="16" viewBox="0 0 40 16" style="position:absolute; left:700px; top:272px;" aria-hidden="true">
+    <path d="M0 8 L32 8 M24 2 L32 8 L24 14" stroke="#D4AF37" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+
+  <!-- Step 4 -->
+  <svg width="170" height="200" viewBox="0 0 170 200" style="position:absolute; left:750px; top:180px;" aria-hidden="true">
+    <rect x="0" y="0" width="170" height="200" rx="8" fill="#f7f7f7" stroke="#D4AF37" stroke-width="2"/>
+    <rect x="0" y="0" width="170" height="6" fill="#D4AF37"/>
+  </svg>
+  <p style="position:absolute; left:750px; top:200px; width:170px; margin:0; font-size:64px; font-weight:700; color:#D4AF37; line-height:1.0; text-align:center;">04</p>
+  <p style="position:absolute; left:750px; top:282px; width:170px; margin:0; font-size:15px; font-weight:700; color:#0a0a0a; text-align:center;">Run dispatch</p>
+  <p style="position:absolute; left:764px; top:306px; width:142px; margin:0; font-size:12px; color:#525252; text-align:center; line-height:1.4;">Engine plans, spawns<br>swarm workers, opens<br>the first HITL gate.</p>
+  <p style="position:absolute; left:764px; top:354px; width:142px; margin:0; font-size:11px; color:#D4AF37; text-align:center; font-weight:600;">You're running.</p>
+
+  <!-- Bottom takeaway -->
+  <p style="position:absolute; left:60px; top:430px; margin:0; font-size:14px; color:#0a0a0a; font-weight:600;">No "step 1, step 2, step 3" manual setup.</p>
+  <p style="position:absolute; left:60px; top:454px; margin:0; font-size:13px; color:#525252; max-width:840px; line-height:1.4;">Step 4 is the one you'll actually type. Everything before it is silent. The auto-update check runs every 6 hours and silently bumps the engine when a new release ships, rate-limited so it never spams GitHub.</p>
+
+  <p style="position:absolute; left:60px; top:505px; margin:0; font-size:11px; color:#737373; font-style:italic;">Cache file: state/auto-update-check.json. Opt out with $env:VORTEX_NO_AUTO_UPDATE=1.</p>
+
+  <!-- Page number badge -->
+  <svg style="position:absolute; right:32px; bottom:24px;" width="36" height="36" viewBox="0 0 36 36" aria-hidden="true">
+    <circle cx="18" cy="18" r="18" fill="#0070F3"/>
+    <text x="18" y="18" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="600" fill="#ffffff" font-family="Times New Roman, serif">07</text>
+  </svg>
+
+</div>
+</body>
+</html>

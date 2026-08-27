@@ -4,7 +4,22 @@ All notable changes to the VORTEX-OS skill package are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
-## [0.1.6] — 2026-08-22
+## [0.1.7] - 2026-08-22
+
+### Added
+- **`walkthrough/`** — visual HTML walkthrough. 11 slides, Times New Roman, palette #18 (铂金白金). Open `walkthrough/index.html` in a browser, or run `walkthrough/record-to-mp4.ps1` to stitch into an MP4 via headless Edge + ffmpeg. ~5-minute read.
+- **`uninstall.ps1`** — clean removal. Dry-run by default; flags `-Engine` (remove engine + module from `Documents\PowerShell\Modules\Vortex`), `-State` (remove `%APPDATA%\Vortex-OS`), `-All` (both). The skill folder itself is never auto-deleted — the operator removes it by hand.
+- **`references/architecture.md`** — 7 Mermaid architecture diagrams (big picture, 4-tier chain, storage split, install flow, dispatch + HITL flow, auto-update, data lifecycle) plus a component-by-component reference table. The companion to the prose in `references/INSTRUCTIONS.md`.
+- **`idea-future-recommendations.md`** — 18 prioritized next-version items, 12 known gaps, 5 open questions. The Phase 1 plan that drove the v0.1.7 work.
+- **`idea-architecture-decisions.md`** — 15 Architecture Decision Records (engine choice = .NET 10 C++/CLI, two-root storage, user-scope install, self-bootstrapping, per-project subfolders, etc.). Supersedes earlier design discussions.
+- **`idea-faq-and-pitfalls.md`** — 30+ Q&As across 10 categories (install, storage, HITL, self-heal, manifest, audio, etc.). The "why does it do X?" file.
+- **`templates/episode_pattern.json`** — Golden Path template for episode-style dispatches. Read by the engine when `--dispatch-template` is passed (engine-side support lands in v0.1.9).
+- **`SKILL.md` Skill Anatomy table** now lists the walkthrough, the 3 idea docs, the Mermaid reference, `uninstall.ps1`, and the templates folder.
+
+### Changed
+- **Version bump** to 0.1.7.
+
+## [0.1.6] - 2026-08-22
 
 ### Changed
 - **Skill description rewritten to be capability-driven and universal.**

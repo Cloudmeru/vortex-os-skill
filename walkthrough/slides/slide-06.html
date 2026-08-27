@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Two-tier storage: skill + VORTEX_HOME</title>
+<style>
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #000;
+}
+.slide-content {
+  width: 960px;
+  height: 540px;
+  position: relative;
+  transform-origin: center center;
+}
+</style>
+<script>
+function scaleSlide() {
+  const slide = document.querySelector('.slide-content');
+  if (!slide) return;
+  const slideWidth = 960;
+  const slideHeight = 540;
+  const scaleX = window.innerWidth / slideWidth;
+  const scaleY = window.innerHeight / slideHeight;
+  const scale = Math.min(scaleX, scaleY);
+  slide.style.width = slideWidth + 'px';
+  slide.style.height = slideHeight + 'px';
+  slide.style.transform = `scale(${scale})`;
+  slide.style.transformOrigin = 'center center';
+  slide.style.flexShrink = '0';
+}
+window.addEventListener('load', scaleSlide);
+window.addEventListener('resize', scaleSlide);
+</script>
+</head>
+<body>
+<div class="slide-content" style="background:#ffffff; font-family:'Times New Roman', serif;">
+
+  <!-- Title -->
+  <p style="position:absolute; left:60px; top:48px; margin:0; font-size:14px; font-weight:600; letter-spacing:4px; color:#0070F3;">ARCHITECTURE</p>
+  <p style="position:absolute; left:60px; top:72px; margin:0; font-size:36px; font-weight:700; color:#0a0a0a; line-height:1.0;">Two-tier storage keeps your work safe</p>
+
+  <!-- Divider -->
+  <svg width="60" height="3" style="position:absolute; left:60px; top:124px;" aria-hidden="true">
+    <rect x="0" y="0" width="60" height="3" fill="#D4AF37"/>
+  </svg>
+
+  <!-- Left card: Skill folder (mutable) -->
+  <svg width="380" height="320" style="position:absolute; left:60px; top:160px;" aria-hidden="true">
+    <rect x="0" y="0" width="380" height="320" rx="8" fill="#f5f5f5" stroke="#0070F3" stroke-width="2"/>
+    <rect x="0" y="0" width="380" height="44" rx="8" fill="#0070F3"/>
+    <rect x="0" y="20" width="380" height="24" fill="#0070F3"/>
+  </svg>
+  <p style="position:absolute; left:80px; top:172px; margin:0; font-size:14px; font-weight:700; color:#ffffff; letter-spacing:1px;">SKILL FOLDER · MUTABLE</p>
+  <p style="position:absolute; left:80px; top:222px; margin:0; font-size:13px; font-weight:600; color:#0a0a0a; font-family:Consolas, 'Courier New', monospace;">C:\…\skills\VORTEX-OS\</p>
+
+  <p style="position:absolute; left:80px; top:260px; margin:0; font-size:13px; color:#525252;">· SKILL.md &nbsp;· references/ &nbsp;· agents/</p>
+  <p style="position:absolute; left:80px; top:284px; margin:0; font-size:13px; color:#525252;">· templates/ &nbsp;· skill.ps1 &nbsp;· install.ps1</p>
+  <p style="position:absolute; left:80px; top:308px; margin:0; font-size:13px; color:#525252;">· auto-update.ps1 &nbsp;· uninstall.ps1</p>
+
+  <svg width="20" height="20" viewBox="0 0 20 20" style="position:absolute; left:80px; top:340px;" aria-hidden="true">
+    <circle cx="10" cy="10" r="10" fill="#0070F3"/>
+    <polyline points="5 10 9 14 15 7" fill="none" stroke="#ffffff" stroke-width="2"/>
+  </svg>
+  <p style="position:absolute; left:108px; top:342px; margin:0; font-size:12px; color:#0a0a0a; font-weight:600;">Replaced on every skill upgrade</p>
+  <p style="position:absolute; left:108px; top:360px; margin:0; font-size:12px; color:#525252;">Lives in the user profile. Safe to delete and re-install.</p>
+
+  <!-- Right card: VORTEX_HOME (durable) -->
+  <svg width="380" height="320" style="position:absolute; right:60px; top:160px;" aria-hidden="true">
+    <rect x="0" y="0" width="380" height="320" rx="8" fill="#f5f5f5" stroke="#D4AF37" stroke-width="2"/>
+    <rect x="0" y="0" width="380" height="44" rx="8" fill="#D4AF37"/>
+    <rect x="0" y="20" width="380" height="24" fill="#D4AF37"/>
+  </svg>
+  <p style="position:absolute; right:300px; top:172px; margin:0; font-size:14px; font-weight:700; color:#0a0a0a; letter-spacing:1px;">VORTEX_HOME · DURABLE</p>
+  <p style="position:absolute; right:80px; top:222px; margin:0; font-size:13px; font-weight:600; color:#0a0a0a; font-family:Consolas, 'Courier New', monospace;">%APPDATA%\Vortex-OS\</p>
+
+  <p style="position:absolute; right:80px; top:260px; margin:0; font-size:13px; color:#525252;">· state/ &nbsp;· memory/ &nbsp;· swarms/</p>
+  <p style="position:absolute; right:80px; top:284px; margin:0; font-size:13px; color:#525252;">· tasks/ &nbsp;· deliverables/&lt;project&gt;/</p>
+  <p style="position:absolute; right:80px; top:308px; margin:0; font-size:13px; color:#525252;">· decision_history.json &nbsp;· prompt_optimizations/</p>
+
+  <svg width="20" height="20" viewBox="0 0 20 20" style="position:absolute; right:300px; top:340px;" aria-hidden="true">
+    <circle cx="10" cy="10" r="10" fill="#D4AF37"/>
+    <polyline points="5 10 9 14 15 7" fill="none" stroke="#0a0a0a" stroke-width="2"/>
+  </svg>
+  <p style="position:absolute; right:148px; top:342px; margin:0; font-size:12px; color:#0a0a0a; font-weight:600;">Survives every skill upgrade</p>
+  <p style="position:absolute; right:80px; top:360px; margin:0; font-size:12px; color:#525252; text-align:right; max-width:300px;">Per-project deliverables, decision history, and self-heal prompts all live here. Back this folder up.</p>
+
+  <!-- Bottom takeaway -->
+  <p style="position:absolute; left:60px; top:500px; margin:0; font-size:12px; color:#737373; font-style:italic;">Skill upgrades touch the skill folder only. Your 200 MB of state and deliverables never move.</p>
+
+  <!-- Page number badge -->
+  <svg style="position:absolute; right:32px; bottom:24px;" width="36" height="36" viewBox="0 0 36 36" aria-hidden="true">
+    <circle cx="18" cy="18" r="18" fill="#0070F3"/>
+    <text x="18" y="18" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="600" fill="#ffffff" font-family="Times New Roman, serif">06</text>
+  </svg>
+
+</div>
+</body>
+</html>

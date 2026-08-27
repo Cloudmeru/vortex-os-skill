@@ -1,0 +1,34 @@
+{
+  "requests": [
+    {
+      "prompt": "Editorial hero illustration of a self-bootstrapping orchestration system. A polished platinum-white control tower at the center with golden accent lines, multiple glowing agent satellites orbiting in coordinated paths around it, blue energy beams connecting them in a network. Background is deep charcoal with subtle dot grid. Cinematic lighting, premium tech feel, clean composition with negative space on the left for text overlay. No text. No people.",
+      "aspect_ratio": "16:9",
+      "resolution": "1K",
+      "output_file": "cover_hero"
+    },
+    {
+      "prompt": "Editorial illustration showing chaotic multi-agent pipeline mess: scattered paper documents, tangled colored threads, broken gears, scattered sticky notes, red error signs. Soft platinum-white background, gold accent highlights, blue color-coded threads. Top-down isometric perspective. Clean editorial illustration style, no text, no people.",
+      "aspect_ratio": "16:9",
+      "resolution": "1K",
+      "output_file": "problem_chaos"
+    },
+    {
+      "prompt": "Minimalist editorial illustration of a self-healing loop: a circular arrow made of platinum and gold, with three nodes around it labeled by abstract symbols (a pencil, a shield, a refresh). Clean white background, blue and gold accent colors. Flat design, no text, premium tech feel.",
+      "aspect_ratio": "16:9",
+      "resolution": "1K",
+      "output_file": "selfheal_loop"
+    },
+    {
+      "prompt": "Editorial illustration of three sequential approval gates forming a clean vertical stack: gate 1, gate 2, gate 3, with the middle gate highlighted in gold as critical. Soft blue and platinum color scheme, white background, minimalist flat design. No text, no people.",
+      "aspect_ratio": "16:9",
+      "resolution": "1K",
+      "output_file": "hitl_gates"
+    },
+    {
+      "prompt": "Editorial illustration of an operator toolbox: wrench, terminal window, package box, folder structure, all rendered in clean isometric flat design. Platinum-white background with blue and gold accent colors. No text, no people, premium tech aesthetic.",
+      "aspect_ratio": "16:9",
+      "resolution": "1K",
+      "output_file": "operator_tools"
+    }
+  ]
+}
