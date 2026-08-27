@@ -4,6 +4,69 @@ All notable changes to the VORTEX-OS skill package are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.1.10] - 2026-08-27
+
+### Added
+- **`--health` flag on `skill.ps1`.** Prints the active tier (engine
+  available / not available) and recovery hints. Exits 0 regardless
+  of engine state. Works even when the engine is missing.
+- **`--recover-engine` flag on `skill.ps1`.** Retries `install.ps1` and
+  re-detects the engine. Use `--recover-engine -Force` to skip the 6h
+  auto-update rate-limit cache. Useful when the initial install failed
+  (network blip, GitHub rate-limit, OneDrive ghost) and you want to
+  retry without manually re-running `install.ps1`.
+- **`--no-engine` flag on `skill.ps1`.** Forces Tier 1 (engine) to be
+  considered unavailable even if installed. Used for testing the Tier 2
+  (LLM-as-engine) path.
+- **`references/LLM-FALLBACK.md`** (163 lines) — the Tier 2 recipe. When
+  the engine is unavailable and the dispatcher is an LLM-coding-agent,
+  the LLM reads this file to act as the engine for one dispatch. The
+  recipe is procedural, deterministic, and walks through reading the
+  objective, planning the deliverables, running the 4-tier chain, the
+  self-heal loop, the 3-gate HITL pattern (with the CRITICAL moral
+  hinge that must NOT be auto-approved), and writing the manifest.
+- **`verify.ps1` v0.1.10 file-I/O checks** (4 new checks, run before
+  the engine verify): LLM-FALLBACK.md exists and is >= 50 lines;
+  `skill.ps1` declares `$Health`, `$RecoverEngine`, `$NoEngine`; `--health`
+  reports `AVAILABLE`; `--no-engine` shows the Tier 2 banner with the
+  LLM-FALLBACK pointer. If any of these fail, the engine verify is
+  skipped (no point running it if the skill is broken).
+
+### Changed
+- **Version bump** to 0.1.10.
+- **`skill.ps1` routing refactored.** The PowerShell shell remains
+  strictly a thin routing layer; no parallel PowerShell implementation
+  of any command (per user direction). New: `Show-Tier2Banner` function
+  (defined at the top of the script for hoisting) prints a clear error
+  when the engine is missing and points the user to `--recover-engine`
+  and the LLM-FALLBACK recipe. The auto-update + install + import
+  + dispatch flow is preserved.
+- **`_meta.json`** version 0.1.7 → 0.1.10; added `llm_fallback_recipe`
+  file entry and 3 new capabilities (`engine-health-check`,
+  `engine-recovery`, `llm-fallback-recipe`).
+
+### Architecture note (per user direction 2026-08-27)
+- The earlier 3-tier design (PowerShell shell + C++ engine + LLM
+  fallback) had a "Tier 1 PowerShell-only re-implementation of 14
+  commands" idea. **This was rejected** by the user because a parallel
+  PowerShell implementation of the same commands would be a second
+  engine to maintain — no shared code, no shared tests, long-term
+  divergence risk.
+- The 2-tier design is now canonical: **Tier 1 = the C++ engine
+  (always required for production). Tier 2 = the LLM-as-engine
+  fallback (recipe only, for the rare case the engine is missing and
+  the dispatcher is an LLM-coding-agent).**
+- The PowerShell `skill.ps1` is now strictly routing: find / install
+  / load the engine; forward argv; show the Tier 2 banner if the
+  engine is missing. No `lib/PS-Only/*.ps1` exists.
+
+### Compatibility
+- **No engine change** required. Engine v0.1.9 (or newer) is unchanged.
+- The 33 PowerShell end-to-end tests in
+  `vortex-os-dotnet/tests/test_engine.ps1` still pass.
+- The engine verify at the end of `verify.ps1` still runs and reports
+  the same checks as v0.1.7.
+
 ## [0.1.7] - 2026-08-22
 
 ### Added

@@ -79,9 +79,83 @@ if ($Install -or -not $manifest) {
     }
 }
 
-# --- 4. Import + verify ------------------------------------------------------
+# --- 4. Tier-2 / file-I/O checks (run BEFORE the engine verify) ------------
+# These checks don't require the engine to be loadable. They validate the
+# skill's static structure. If they fail, the engine verify is skipped (no
+# point running the engine if the skill is broken).
+$v010_pass = $true
+Write-Host ""
+Write-Host "v0.1.10 file-I/O checks"
+Write-Host "----------------------"
+
+# Check 1: LLM-FALLBACK.md exists (Tier-2 recipe, required by the 2-tier design)
+$llmFallback = Join-Path $here 'references\LLM-FALLBACK.md'
+if (Test-Path $llmFallback) {
+    $lineCount = (Get-Content $llmFallback).Count
+    if ($lineCount -ge 50) {
+        Write-Host "  ✓ LLM-FALLBACK.md present ($lineCount lines)" -ForegroundColor Green
+    } else {
+        Write-Host "  ✗ LLM-FALLBACK.md too short ($lineCount lines, expected >= 50)" -ForegroundColor Red
+        $v010_pass = $false
+    }
+} else {
+    Write-Host "  ✗ LLM-FALLBACK.md MISSING (Tier 2 recipe required for engine-unavailable recovery)" -ForegroundColor Red
+    $v010_pass = $false
+}
+
+# Check 2: skill.ps1 declares the 2-tier maintenance flags
+$skillPs1 = Join-Path $here 'skill.ps1'
+$skillContent = Get-Content $skillPs1 -Raw
+$requiredFlags = @('\$Health', '\$RecoverEngine', '\$NoEngine')
+foreach ($flag in $requiredFlags) {
+    if ($skillContent -match $flag) {
+        Write-Host "  ✓ skill.ps1 declares $flag" -ForegroundColor Green
+    } else {
+        Write-Host "  ✗ skill.ps1 missing $flag" -ForegroundColor Red
+        $v010_pass = $false
+    }
+}
+
+# Check 3: --health works (engine loadable)
+if ($manifest) {
+    try {
+        $healthOut = & pwsh -NoProfile -File $skillPs1 --health 2>&1 | Out-String
+        if ($healthOut -match 'AVAILABLE') {
+            Write-Host "  ✓ --health reports engine AVAILABLE" -ForegroundColor Green
+        } else {
+            Write-Host "  ✗ --health did not report AVAILABLE" -ForegroundColor Red
+            $v010_pass = $false
+        }
+    } catch {
+        Write-Host "  ✗ --health failed: $($_.Exception.Message)" -ForegroundColor Red
+        $v010_pass = $false
+    }
+}
+
+# Check 4: --no-engine shows the Tier 2 banner
+try {
+    $noEngineOut = & pwsh -NoProfile -File $skillPs1 --no-engine --dispatch-master 'test.md' 2>&1 | Out-String
+    if ($noEngineOut -match 'NOT AVAILABLE' -and $noEngineOut -match 'LLM-FALLBACK') {
+        Write-Host "  ✓ --no-engine shows Tier 2 banner with LLM-FALLBACK pointer" -ForegroundColor Green
+    } else {
+        Write-Host "  ✗ --no-engine did not show the expected Tier 2 banner" -ForegroundColor Red
+        $v010_pass = $false
+    }
+} catch {
+    Write-Host "  ✗ --no-engine check failed: $($_.Exception.Message)" -ForegroundColor Red
+    $v010_pass = $false
+}
+
+if (-not $v010_pass) {
+    Write-Host ""
+    Write-Host "v0.1.10 file-I/O checks FAILED. Skipping engine verify." -ForegroundColor Red
+    exit 1
+}
+
+# --- 5. Import + verify ------------------------------------------------------
 try {
     Import-Module $manifest -Force -ErrorAction Stop
+    Write-Host "  ✓ engine module loaded: $manifest" -ForegroundColor Green
 } catch {
     throw "VORTEX-OS engine is installed on disk at $manifest but PowerShell can't load it: $($_.Exception.Message)"
 }

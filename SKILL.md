@@ -1,7 +1,7 @@
 ---
 name: VORTEX-OS
 display_name: VORTEX-OS - Multi-Agent Orchestration Engine
-version: 0.1.7
+version: 0.1.10
 description: |
   VORTEX-OS is a self-bootstrapping PowerShell skill that drives the
   [Cloudmeru/vortex-os-dotnet](https://github.com/Cloudmeru/vortex-os-dotnet)
