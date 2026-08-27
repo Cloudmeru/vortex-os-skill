@@ -1,0 +1,25 @@
+{
+  "name": "image-portrait",
+  "version": "1.0.0",
+  "author": "VORTEX-OS",
+  "license": "MIT",
+  "description": "Character portrait generation. Wraps MiniMax-Image.",
+  "capability": "image",
+  "inputs": {
+    "prompt":      { "type": "string",  "required": true,  "description": "Character description / portrait prompt" },
+    "style":       { "type": "string",  "required": false, "default": "realistic", "enum": ["realistic", "cinematic", "anime", "watercolor", "oil-painting", "comic"] },
+    "aspect":      { "type": "string",  "required": false, "default": "1:1", "enum": ["1:1", "3:4", "4:3", "16:9", "9:16"] },
+    "seed":        { "type": "integer", "required": false, "description": "Optional seed for reproducible results" }
+  },
+  "outputs": {
+    "file":   { "type": "string", "description": "Absolute path to the generated image" },
+    "width":  { "type": "integer", "description": "Pixel width" },
+    "height": { "type": "integer", "description": "Pixel height" },
+    "style":  { "type": "string", "description": "Style used" }
+  },
+  "command": {
+    "type": "powershell",
+    "entry": "invoke.ps1",
+    "timeout_s": 300
+  }
+}

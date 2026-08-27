@@ -1,0 +1,26 @@
+{
+  "name": "media-ffmpeg",
+  "version": "1.0.0",
+  "author": "VORTEX-OS",
+  "license": "MIT",
+  "description": "Local ffmpeg wrapper. Audio chopping, format conversion, basic filters. No LLM — just calls the ffmpeg binary on the host.",
+  "capability": "media",
+  "inputs": {
+    "input":        { "type": "string",  "required": true,  "description": "Absolute path to the input media file" },
+    "output":       { "type": "string",  "required": false, "description": "Absolute path for the output file (default: <VORTEX_HOME>/deliverables/<project>/ffmpeg_<ts>.<ext>)" },
+    "start_s":      { "type": "number",  "required": false, "description": "Trim start time in seconds" },
+    "duration_s":   { "type": "number",  "required": false, "description": "Trim duration in seconds" },
+    "sample_rate":  { "type": "integer", "required": false, "description": "Resample to this Hz (e.g. 44100)" },
+    "bitrate":      { "type": "string",  "required": false, "description": "Target bitrate (e.g. '128k')" }
+  },
+  "outputs": {
+    "file":          { "type": "string", "description": "Absolute path to the produced file" },
+    "duration_s":    { "type": "number", "description": "Output duration in seconds" },
+    "command":       { "type": "string", "description": "The ffmpeg command that was run" }
+  },
+  "command": {
+    "type": "powershell",
+    "entry": "invoke.ps1",
+    "timeout_s": 300
+  }
+}

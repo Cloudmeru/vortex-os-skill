@@ -1,0 +1,23 @@
+{
+  "name": "audio-foley",
+  "version": "1.0.0",
+  "author": "VORTEX-OS",
+  "license": "MIT",
+  "description": "Generate foley sound effects (footsteps, fabric, impacts) from natural-language prompts. Wraps MiniMax-Music.",
+  "capability": "audio",
+  "inputs": {
+    "prompt":     { "type": "string",  "required": true,  "description": "Natural-language description of the sound" },
+    "duration_s": { "type": "integer", "required": false, "default": 5, "description": "Length of the output in seconds" },
+    "format":     { "type": "string",  "required": false, "default": "wav", "enum": ["wav", "mp3", "flac"] }
+  },
+  "outputs": {
+    "file":       { "type": "string", "description": "Absolute path to the generated audio file" },
+    "duration_s": { "type": "number", "description": "Actual duration in seconds" },
+    "format":     { "type": "string", "description": "The file format" }
+  },
+  "command": {
+    "type": "powershell",
+    "entry": "invoke.ps1",
+    "timeout_s": 300
+  }
+}

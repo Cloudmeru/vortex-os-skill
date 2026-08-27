@@ -1,0 +1,23 @@
+{
+  "name": "code-typescript",
+  "version": "1.0.0",
+  "author": "VORTEX-OS",
+  "license": "MIT",
+  "description": "TypeScript code generation from a specification. Wraps MiniMax-Text-01.",
+  "capability": "code",
+  "inputs": {
+    "spec":      { "type": "string",  "required": true,  "description": "What the code should do (the specification)" },
+    "framework": { "type": "string",  "required": false, "default": "vanilla", "enum": ["vanilla", "node", "react", "express", "fastify", "next"] },
+    "filename":  { "type": "string",  "required": false, "default": "output.ts", "description": "Output filename" }
+  },
+  "outputs": {
+    "file":      { "type": "string", "description": "Absolute path to the generated .ts file" },
+    "filename":  { "type": "string", "description": "The output filename" },
+    "line_count": { "type": "integer", "description": "Lines of code" }
+  },
+  "command": {
+    "type": "powershell",
+    "entry": "invoke.ps1",
+    "timeout_s": 300
+  }
+}

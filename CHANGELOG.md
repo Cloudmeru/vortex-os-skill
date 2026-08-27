@@ -4,6 +4,45 @@ All notable changes to the VORTEX-OS skill package are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.2.0] - 2026-08-27
+
+### Added
+- **Engine plugin system (PRD-11).** The engine now discovers and invokes
+  user-installed plugins instead of hard-coding worker types. A new worker
+  is now a 30-minute PowerShell plugin instead of a 3-day engine fork.
+- **`plugins/` directory with 6 reference plugins** (each is a
+  `plugin.json` manifest + `invoke.ps1` worker):
+  - `text-writer` / `text-editor` — LLM-backed prose generation and editing
+  - `audio-foley` — foley sound effects (stub: silent WAV so the
+    contract is satisfied without an API key)
+  - `image-portrait` — character portraits (stub: 1x1 PNG)
+  - `code-typescript` — TypeScript code generation via MiniMax-Text-01
+  - `media-ffmpeg` — pure-PowerShell shim around the local ffmpeg binary
+    (no LLM)
+- **`plugin-sdk/Vortex.Plugin.psm1`** — the SDK for plugin authors.
+  Exports 5 functions: `Get-VortexPluginInput`, `Test-VortexPluginInput`,
+  `Write-VortexPluginOutput`, `Invoke-MiniMaxLLM`, `Write-VortexPluginLog`.
+- **New engine commands**: `--plugins-list`, `--plugins-info <name>`,
+  `--plugin-test <name>`, `--plugin-remove <name>`, `--plugin-invoke <name>`.
+- **New PowerShell cmdlet**: `Get-VortexPlugin` (alias for
+  `--plugins-list` / `--plugins-info`).
+- **Plugin discovery**: two scopes merged with user-scope-wins
+  (`$VORTEX_HOME/plugins/` overrides `<skill>/plugins/`).
+- **Plugin audit**: every `plugin_invoke` + `plugin_test` is logged to
+  `memory/audit.jsonl` with `gate_id=<plugin name>` for the audit viewer.
+
+### Engine dependency
+- Requires [vortex-os-dotnet v0.2.0](https://github.com/Cloudmeru/vortex-os-dotnet/releases/tag/v0.2.0)
+  (auto-updated on next `skill.ps1` invocation, or run
+  `skill.ps1 --recover-engine` to force the install).
+
+### Compatibility
+- v0.2.0 engine is forward-compatible with v0.1.x skills (the 5 new
+  commands are no-ops for older clients).
+- v0.2.0 skill is forward-compatible with v0.1.x engines (older
+  engines don't know about the plugin commands, but every existing
+  command still works unchanged).
+
 ## [0.1.12] - 2026-08-27
 
 ### Added
