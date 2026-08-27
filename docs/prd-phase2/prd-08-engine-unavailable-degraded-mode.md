@@ -1,116 +1,183 @@
-# PRD-08 — Engine Unavailable: Degraded Mode
+# PRD-08 — Engine Unavailable: 3-Tier Fallback
 
-**Status:** Draft · Phase 2
+**Status:** Draft · Phase 2 (revised 2026-08-27 after user input)
 **Owner:** VORTEX-OS maintainers
-**Source:** `idea-future-recommendations.md` item 8, plus the user's request:
-> "if the engine is unavailable due to failed download, can it still run and survive with all the process? think about this approach, output as prd"
-
-**Related:** directly enables PRD-11 (item 8 option C — two engines) and is the foundation for cross-platform support in v1.0+.
+**Source:** `idea-future-recommendations.md` item 8 + user direction
+**Scope:** **Windows only.** Linux/macOS support is explicitly out of scope for phase 2.
 
 ---
 
 ## 1. Problem
 
-The skill is **self-bootstrapping**: the first `skill.ps1` invocation downloads `Vortex.dll` from the public `vortex-os-dotnet` GitHub release and installs it into `~\Documents\PowerShell\Modules\Vortex\<version>\`. If that download fails, **every command fails** with the same error:
+The skill is **self-bootstrapping**: the first `skill.ps1` invocation downloads `Vortex.dll` from the public `vortex-os-dotnet` GitHub release. If that download fails, every command fails with the same error.
+
+**Phase-2 scope (revised):** Windows only. The cross-platform options (A: self-contained .NET host, B: Mono, C: two engines) are deferred. PRD-08 now addresses **only the Windows engine-unavailable failure modes**:
+
+1. Network down at install time
+2. GitHub rate-limit hit (60/hr unauthenticated)
+3. GitHub outage
+4. PSModulePath is broken (OneDrive Files-On-Demand ghost, no writable module path)
+5. `install.ps1` itself has a bug
+6. The user has an unusual Windows config (corporate proxy, custom install location)
+
+## 2. The 3-tier architecture
 
 ```
-[vortex-os] Engine not found locally -- running installer (one-time, downloads from GitHub release) ...
-[vortex-os] v0.1.9 already installed at C:\Users\...\Vortex\0.1.9 -- nothing to do.
-...or:
-ERROR: None of the PSModulePath entries are writable for the current user.
-```
-
-The user can't even read the help, lint a custom agent, list pending HITL gates, or replay a saved decision. The skill is **all-or-nothing** today.
-
-This bites in three scenarios:
-
-1. **One-time install with a flaky network** — GitHub rate-limits unauthenticated requests to 60/hour. A user hitting the limit at install time can't recover without manual work.
-2. **GitHub outage / region block** — the engine source is a single point of failure.
-3. **Cross-platform option C** (item 8) — even if we ship a Linux/macOS C# engine, there will be a window where neither engine is built. The skill shell must survive that window.
-
-## 2. Can the engine be unavailable and the skill still work?
-
-**Yes — partially.** Most of the engine's surface is file I/O that PowerShell can re-implement in ~100 lines:
-
-| Command | Engine today? | Can PS do it alone? | Notes |
-|---|---|---|---|
-| `--version` | yes | ✅ trivial | Just print `$skillFolder\CHANGELOG.md` head line |
-| `--help` | yes | ✅ trivial | Static text in skill.ps1 |
-| `--agents-discover` | yes | ✅ trivial | `Get-ChildItem agents\*.json` + parse |
-| `--agents-inspect <name>` | yes | ✅ trivial | `Get-Content agents\<name>.json` |
-| `--agents-validate <file>` | yes | ✅ trivial | `Test-Json` + schema check |
-| `--agents-lint [--all]` | yes | ✅ trivial | Walk agents/, run validate on each |
-| `--agents-graph` | yes | ✅ medium | Parse `triggers[]` / `escalates_to[]` + ASCII tree |
-| `--agents-trace <run_id>` | yes | ✅ trivial | Read `swarms\active_<id>\memory\*.json` |
-| `--audit-trail` | yes | ✅ trivial | Read last 50 lines of `memory\audit.jsonl` |
-| `--hitl-status` | yes | ✅ trivial | `Get-ChildItem state\pending_approvals\*.json` |
-| `--hitl-approve <task_id>` | yes | ✅ trivial | Write approved JSON to checkpoint file |
-| `--hitl-deny <task_id>` | yes | ✅ trivial | Write denied JSON to checkpoint file |
-| `--decision-list` | yes | ✅ trivial | Read `state\decision_history.json` |
-| `--decision-record` | yes | ✅ trivial | Append to `state\decision_history.json` |
-| `--package <id> [--dry-run]` | yes | ✅ medium | Copy + write manifest. SHA-1 in PowerShell: `[System.Security.Cryptography.SHA1]::Create().ComputeHash(...)` |
-| `--dispatch-master` | yes | ❌ | LLM call + 4-tier chain. Requires engine. |
-| `--dispatch-template` | yes | ❌ | Renders template + dispatches. Requires engine. |
-| `--dispatch-v4` | yes | ❌ | Runs the master pipeline. Requires engine. |
-| `--inspector-check` | yes | ❌ | Continuity Engine rule checks. Requires engine. |
-
-**Conclusion: 14 of 18 commands can be re-implemented in pure PowerShell with no engine. The 4 that need the engine are the ones that actually do work (LLM calls + rule evaluation).**
-
-The skill becomes a **layered system**:
-
-```
-┌─────────────────────────────────────────────┐
-│ PowerShell shell (skill.ps1 + helpers)      │  ← ALWAYS present
-│  - routing                                  │
-│  - file I/O commands (14 of 18)             │
-│  - degraded-mode banner + recovery hints    │
-└─────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────┐
+│ Tier 1: PowerShell shell (always present, ~600 LoC)     │
+│   14 commands work standalone.                           │
+│   Always works, even if engine + LLM are both gone.     │
+└─────────────────────────────────────────────────────────┘
             │
-            │ loads if present
+            │ if Vortex.dll is present
             ▼
-┌─────────────────────────────────────────────┐
-│ C++/CLI engine (Vortex.dll)                 │  ← Windows primary
-│  - 4-tier dispatch chain                    │
-│  - LLM coordination                         │
-│  - Continuity Engine (rule eval)            │
-│  - Self-heal optimizer                      │
-└─────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────┐
+│ Tier 2: C++/CLI engine (Vortex.dll, 84 KB)              │
+│ Fast, deterministic, reproducible, versioned.           │
+│ WINDOWS ONLY.                                           │
+└─────────────────────────────────────────────────────────┘
             │
-            │ or, alternative engine (option C, item 8)
+            │ if engine is unavailable AND we're in an
+            │ LLM-coding-agent context (Mavis, Codex, etc.):
             ▼
-┌─────────────────────────────────────────────┐
-│ C# engine (Vortex.dll, .NET 10 only)        │  ← Linux/macOS
-│  - same surface, slower (no IJW)            │
-└─────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────┐
+│ Tier 3: LLM-as-engine fallback                          │
+│ The coding agent's LLM reads SKILL.md, agent manifests, │
+│ templates, and acts as the engine for that dispatch.    │
+│ Slow (seconds per deliverable) but RESILIENT.           │
+└─────────────────────────────────────────────────────────┘
 ```
 
-The PowerShell layer doesn't care which engine is loaded — it just calls `Invoke-Vortex` and checks `$LASTEXITCODE`. If no engine is present, the PowerShell commands still work; the engine-only commands print a clear "engine unavailable, here is how to recover" message.
+**Tier 1 (PowerShell-only):** 14 of 18 commands work end-to-end. Pure file I/O + JSON. Re-implemented in `<skill>/lib/PS-Only/*.ps1`.
 
-## 3. Goals
+**Tier 2 (C++/CLI engine, today's v0.1.9):** The fast path. 4 of 18 commands (the LLM-dispatch ones) plus the engine provides the canonical implementation of the file-I/O commands for the happy path. Already shipped.
 
-1. **The skill shell survives a failed engine install.** All non-engine commands work end-to-end after a network failure.
-2. **The skill shell is cross-platform-ready.** The PowerShell layer never assumes Vortex.dll; the same code works on Windows / Linux / macOS.
-3. **The user always knows which commands are unavailable and why.** A single `--health` command reports the engine state, VORTEX_HOME, and a list of degraded-mode-capable commands.
-4. **Recovery is one command.** `--recover-engine` retries the install (with `--force` to bypass any 6h auto-update rate limit) and re-detects.
-5. **No new auto-update rate-limit surprise.** The 6h cache is per-`VORTEX_HOME`, not per-machine, so a fresh VORTEX_HOME gets a fresh check.
+**Tier 3 (LLM-as-engine fallback, NEW):** When Tier 2 is unavailable AND the dispatcher is an LLM-coding-agent (Mavis, Codex, Copilot, etc.), the coding agent's own LLM acts as the engine. It reads the agent manifests, runs the LLM chain, writes the deliverables, updates the audit log. Slow but resilient. **No new code to ship** — the LLM is already there.
 
-## 4. Non-goals
+## 3. Can the LLM "produce its own engine"?
 
-- **Re-implementing the 4-tier dispatch chain in PowerShell.** That's a rewrite of the engine, not a degraded mode. The 4 engine-only commands stay engine-only.
-- **A pure-PowerShell Continuity Engine.** Continuity Engine has 8+ rules with non-trivial content analysis (anachronism detection, character-consistency checks). PowerShell could do crude regex versions, but the false-positive rate would be unacceptable. Keep the rule eval in the engine.
-- **Replacing `install.ps1`.** Degraded mode is the fallback when install fails, not an alternative install path.
-- **Self-update of the PowerShell layer.** The PowerShell layer is the skill folder, which already auto-syncs when the user updates the skill from the source repo. No new mechanism needed.
+This was the user's question. The honest answer:
 
-## 5. Design
+**Yes, but as Tier 3, not as a replacement for Tier 2.**
 
-### 5.1 Detection
+Three reasons to KEEP Tier 2:
+1. **Burden analysis.** Asking the LLM to *be* the engine means it has to know the full agent schema, the 8 Continuity Engine rules, the 3-gate HITL pattern, the `.manifest.json` contract, all file paths, all error codes, all C++/CLI build pitfalls. That's ~5K tokens of context and a non-trivial "be a clean engineer" task. The LLM can do it, but the iteration loop is slow.
+2. **Reproducibility.** A committed, versioned engine (`vortex-os-dotnet` releases `v0.1.9`) is the same on every machine. An LLM-regenerates-engine model means N machines have N subtly different engines. Bug fixes can't be one-line PRs.
+3. **Speed.** Engine runs in microseconds. LLM runs in seconds-to-minutes per dispatch step. 7-deliverable episode: 30s vs 30min.
 
-In `skill.ps1`, replace the current "engine not found → throw" path with:
+**Tier 3 is the right place for LLM-as-engine:**
+- Slow path, opt-in (only when Tier 2 fails)
+- No code generation — the LLM just *runs the workflow* with its own reasoning
+- Output is the same deliverables, same manifest, same audit log
+- Documented recipe: "if you got here, the LLM is the engine for this one dispatch"
+
+The user's insight that "the LLM can produce its own solution" is exactly right — but the solution isn't "compile a new C++ engine"; it's "be the engine for this one dispatch."
+
+## 4. Goals
+
+1. **The skill shell never blocks on a missing engine.** Every command returns either a result or a clear "next step" message.
+2. **Tier 1 is robust.** The 14 file-I/O commands are re-implemented in PowerShell and tested independently of the engine.
+3. **Tier 3 is documented.** When a coding agent (Mavis/Codex) hits Tier 2 missing, there's a recipe in `SKILL.md` (or `references/LLM-FALLBACK.md`) that tells the LLM what to do.
+4. **Recovery is one command.** `--recover-engine` retries the install.
+5. **No cross-platform code in v1.x.** All paths assume Windows. Linux/mac is a v2.x conversation.
+
+## 5. Non-goals
+
+- **Linux/macOS support.** Explicitly deferred per user direction.
+- **A self-contained .NET engine (option A).** Deferred.
+- **Mono runtime (option B).** Deferred.
+- **Two-engine strategy (option C).** Deferred.
+- **Re-implementing the 4-tier dispatch chain in PowerShell.** That's a rewrite, not a degraded mode.
+- **A pure-PowerShell Continuity Engine.** The 8+ rules are non-trivial; PowerShell could do crude regex but false positives are unacceptable.
+
+## 6. Design
+
+### 6.1 Tier 1 — PowerShell-only commands (14 of 18)
+
+Move the engine-side implementations of these commands to `<skill>/lib/PS-Only/*.ps1`:
+
+| Command | Current engine impl | PowerShell impl |
+|---|---|---|
+| `--version` | reads banner | reads `CHANGELOG.md` head line |
+| `--help` | static text in `skill.cpp` | static text in `<skill>/lib/PS-Only/Help.ps1` |
+| `--agents-discover` | reads `agents/*.json` | `Get-ChildItem agents/*.json \| ConvertFrom-Json` |
+| `--agents-inspect <name>` | reads + pretty-prints | `Get-Content agents/<name>.json \| ConvertFrom-Json` |
+| `--agents-validate <file>` | `Test-Json` + 8-invariant lint | same, moved to PowerShell |
+| `--agents-lint [--all\|<name>]` | walks all agents, lints each | same, moved to PowerShell |
+| `--agents-graph` | ASCII tree from `triggers[]` | same, moved to PowerShell |
+| `--agents-trace <run_id>` | reads `swarms/active_<id>/*` | same, moved to PowerShell |
+| `--audit-trail` | last 50 lines of `memory/audit.jsonl` | same, moved to PowerShell |
+| `--hitl-status` | `Get-ChildItem state/pending_approvals/*.json` | same, moved to PowerShell |
+| `--hitl-approve <task_id>` | writes approved JSON | same, moved to PowerShell |
+| `--hitl-deny <task_id>` | writes denied JSON | same, moved to PowerShell |
+| `--decision-list` | reads `state/decision_history.json` | same, moved to PowerShell |
+| `--decision-record` | appends to `state/decision_history.json` | same, moved to PowerShell |
+| `--package <id> [--dry-run]` | copy + manifest + SHA-1 (C++) | same, SHA-1 in `[System.Security.Cryptography.SHA1]::Create()` |
+
+All 14 share the same file paths. The engine and PowerShell both read/write the same JSON shapes.
+
+**Effort: ~600 LoC of PowerShell, ~150 LoC of tests.**
+
+### 6.2 Tier 2 — the engine (today's v0.1.9, unchanged)
+
+The C++/CLI engine stays exactly as it is. **No engine changes for PRD-08.**
+
+The engine continues to handle:
+- The 4 engine-only commands (`--dispatch-master/template/v4`, `--inspector-check`)
+- The Continuity Engine rule evaluation
+- The SHA-1 checksum (slightly faster than the PowerShell version, but identical output)
+
+### 6.3 Tier 3 — LLM-as-engine fallback
+
+When Tier 2 is unavailable AND the dispatcher is an LLM-coding-agent, the LLM becomes the engine. This is documented in `<skill>/references/LLM-FALLBACK.md` (a new file). The recipe:
+
+```markdown
+# LLM-as-Engine Fallback
+
+If `skill.ps1 --dispatch-master <objective.md>` returns
+"engine unavailable", and you (the LLM reading this) are
+a coding agent (Mavis, Codex, Copilot, etc.), you can
+act as the engine for this dispatch.
+
+## What to do
+
+1. Read the objective file: `<objective.md>`
+2. Read the agent manifests: `<skill>/agents/*.json`
+3. Read the templates: `<skill>/templates/*.json`
+4. Read the decisions: `$VORTEX_HOME/state/decision_history.json`
+5. For each deliverable in the objective's `deliverables[]`:
+   a. Pick the matching agent (from the manifest's `capability`)
+   b. Construct the prompt (objective + agent instructions + prior decisions)
+   c. Call the LLM (yourself)
+   d. Apply the 8 Continuity Engine rules (read SKILL.md section "Continuity Engine")
+   e. If a rule fails: re-prompt with a hardened version (read the existing
+      `state/prompt_optimizations/<agent>_<ts>.json` files for examples)
+   f. Write the deliverable to `$VORTEX_HOME/deliverables/<project>/<file>`
+   g. Append to `memory/audit.jsonl` (use the schema in the audit viewer PRD)
+6. After all deliverables: write the `.manifest.json` and yield for the
+   Gate 3 (final pack) approval.
+
+## What NOT to do
+
+- Do NOT try to compile a new C++ engine. The user's directive is "skip Linux/mac, focus on Windows." On Windows, the engine either works or it doesn't; you can't rebuild it from inside a PowerShell session.
+- Do NOT regenerate the entire skill folder. The skill is the user's source of truth.
+- Do NOT touch the user's `VORTEX_HOME` state files outside of the standard deliverables + audit + decision paths.
+
+## When to give up
+
+- If the LLM doesn't have enough context (e.g. the manifest schema is unclear), tell the user "engine unavailable, here's a manual recipe: <link to SKILL.md>".
+- If the deliverable requires a tool the LLM doesn't have (e.g. ffmpeg for audio chopping), tell the user "this deliverable needs ffmpeg; install it via `winget install Gyan.FFmpeg` and re-run".
+```
+
+The recipe is ~100 lines of Markdown. The LLM reads it, follows the steps, produces the deliverables. No code changes to the skill.
+
+**Effort: ~100 LoC of Markdown documentation. Zero code.**
+
+### 6.4 Detection in `skill.ps1`
 
 ```powershell
-# Find the engine manifest (returns $null if missing)
+# Find the engine manifest
 $manifest = Find-VortexManifest
-
 $engineAvailable = $false
 if ($manifest) {
     try {
@@ -124,186 +191,116 @@ if ($manifest) {
 if (-not $engineAvailable) {
     Write-Host ""
     Write-Host "  +-- VORTEX-OS Engine: NOT AVAILABLE --+" -ForegroundColor Yellow
-    Write-Host "  | 14 of 18 commands work in PS-only mode." -ForegroundColor Yellow
-    Write-Host "  | Engine-only commands (--dispatch-*, --inspector-check) will fail with a clear message." -ForegroundColor Yellow
+    Write-Host "  | Tier 1 (PowerShell): 14 commands work." -ForegroundColor Yellow
+    Write-Host "  | Tier 2 (C++/CLI):     4 commands unavailable." -ForegroundColor Yellow
+    Write-Host "  | Tier 3 (LLM fallback): if you're an LLM coding agent, see" -ForegroundColor Yellow
+    Write-Host "  |   <skill>/references/LLM-FALLBACK.md" -ForegroundColor Yellow
     Write-Host "  | Run:  pwsh -NoProfile -File .\skill.ps1 --recover-engine" -ForegroundColor Yellow
     Write-Host "  +-----------------------------------------+" -ForegroundColor Yellow
-    Write-Host ""
-    $script:EngineAvailable = $false
-    $script:EngineManifest = $null
-} else {
-    $script:EngineAvailable = $true
-    $script:EngineManifest = $manifest
 }
 ```
 
-### 5.2 New commands (all PowerShell-only)
-
-Add to `skill.ps1` as native functions (no engine needed):
+### 6.5 New commands
 
 ```powershell
-# Print one line per command: status (OK/DEGRADED) + description
-function Invoke-Health {
-    $rows = @(
-        @{ cmd = '--version';             status = 'OK';       note = 'reads SKILL.md' }
-        @{ cmd = '--help';                status = 'OK';       note = 'static text' }
-        @{ cmd = '--agents-discover';     status = 'OK';       note = 'reads agents/*.json' }
-        @{ cmd = '--agents-inspect';      status = 'OK';       note = 'reads agents/<name>.json' }
-        @{ cmd = '--agents-validate';     status = 'OK';       note = 'Test-Json + schema' }
-        @{ cmd = '--agents-lint';         status = 'OK';       note = 'walks agents/, runs validate' }
-        @{ cmd = '--agents-graph';        status = 'OK';       note = 'ASCII tree from triggers[]' }
-        @{ cmd = '--audit-trail';         status = 'OK';       note = 'reads memory/audit.jsonl' }
-        @{ cmd = '--hitl-status';         status = 'OK';       note = 'reads state/pending_approvals/' }
-        @{ cmd = '--hitl-approve';        status = 'OK';       note = 'writes checkpoint JSON' }
-        @{ cmd = '--hitl-deny';           status = 'OK';       note = 'writes checkpoint JSON' }
-        @{ cmd = '--decision-list';       status = 'OK';       note = 'reads decision_history.json' }
-        @{ cmd = '--decision-record';     status = 'OK';       note = 'appends to decision_history.json' }
-        @{ cmd = '--package';             status = 'OK';       note = 'file copy + manifest + SHA-1 in PS' }
-        @{ cmd = '--dispatch-master';     status = 'ENGINE';   note = 'requires Vortex.dll' }
-        @{ cmd = '--dispatch-template';   status = 'ENGINE';   note = 'requires Vortex.dll' }
-        @{ cmd = '--dispatch-v4';         status = 'ENGINE';   note = 'requires Vortex.dll' }
-        @{ cmd = '--inspector-check';     status = 'ENGINE';   note = 'requires Vortex.dll' }
-    )
-    Write-Host "VORTEX-OS health report"
-    Write-Host "======================="
-    Write-Host ("  Engine:        {0}" -f ($(if ($script:EngineAvailable) { "loaded ($script:EngineManifest)" } else { "NOT AVAILABLE" })))
-    Write-Host ("  VORTEX_HOME:   $env:VORTEX_HOME")
-    Write-Host ("  Skill folder:  $env:VORTEX_SKILL_ROOT")
-    Write-Host ""
-    Write-Host "  Status  Command"
-    Write-Host "  ------  -------"
-    foreach ($r in $rows) {
-        $tag = if ($r.status -eq 'OK') { '[OK]    ' } else { '[ENGINE]' }
-        Write-Host ("  {0}  {1,-22}  {2}" -f $tag, $r.cmd, $r.note)
-    }
-}
-
-# Retry the engine install (calls install.ps1, optionally with -Force on the auto-update)
-function Invoke-RecoverEngine {
-    $env:VORTEX_NO_AUTO_UPDATE = '0'
-    $installer = Join-Path $env:VORTEX_SKILL_ROOT 'install.ps1'
-    if (-not (Test-Path $installer)) { throw "install.ps1 not found at $installer" }
-    Write-Host "[vortex-os] Retrying engine install..." -ForegroundColor Cyan
-    & pwsh -NoProfile -File $installer
-    if ($LASTEXITCODE -ne 0) { throw "install.ps1 failed: $LASTEXITCODE" }
-    Write-Host "[vortex-os] Re-detecting engine..." -ForegroundColor Cyan
-    $newManifest = Find-VortexManifest
-    if ($newManifest) {
-        Write-Host "[vortex-os] Engine recovered at $newManifest" -ForegroundColor Green
-    } else {
-        Write-Host "[vortex-os] install.ps1 ran but no Vortex.psd1 found. Check network / GitHub status." -ForegroundColor Red
-        exit 1
-    }
-}
-```
-
-### 5.3 Engine-only command behavior
-
-When the user runs an engine-only command in degraded mode, print a clear error:
-
-```powershell
-function Invoke-DispatchMaster {
-    if (-not $script:EngineAvailable) {
-        Write-Host ""
-        Write-Host "ERROR: --dispatch-master requires the VORTEX-OS engine (Vortex.dll)." -ForegroundColor Red
-        Write-Host ""
-        Write-Host "  Why: The 4-tier dispatch chain runs LLM calls and the Continuity Engine."
-        Write-Host "       PowerShell alone cannot do this."
-        Write-Host ""
-        Write-Host "  How to recover:"
-        Write-Host "    1. Run:  pwsh -NoProfile -File .\skill.ps1 --recover-engine"
-        Write-Host "    2. If that fails, run install.ps1 -Verbose to see the network error."
-        Write-Host "    3. If GitHub is unreachable, try a different network or pin a version:"
-        Write-Host "         \$env:VORTEX_VERSION = 'v0.1.9'"
-        Write-Host "         pwsh -NoProfile -File .\install.ps1"
-        Write-Host ""
-        exit 2
-    }
-    Invoke-Vortex -Arguments @('--dispatch-master', $MasterPath)
-}
-```
-
-The same pattern wraps `--dispatch-template`, `--dispatch-v4`, and `--inspector-check`.
-
-### 5.4 What changes in the engine
-
-**Nothing.** The engine stays exactly as it is. The PowerShell layer just learns to cope with it being absent.
-
-This is a **skill-only change**. Estimated effort: ~300 lines added to `skill.ps1`, ~100 lines of test coverage in `verify.ps1` + a new test script.
-
-## 6. API surface
-
-### New commands (skill-side)
-
-```powershell
-# 1. Print health report
+# Print which tier is active + which commands work in each tier
 pwsh -NoProfile -File .\skill.ps1 --health
 
-# 2. Retry engine install
+# Retry engine install
 pwsh -NoProfile -File .\skill.ps1 --recover-engine
 
-# 3. Force a re-check of the engine (skip the 6h cache)
+# Force a re-check of the engine (skip 6h cache)
 pwsh -NoProfile -File .\skill.ps1 --recover-engine -Force
 ```
 
-### Existing commands — behavior changes
+### 6.6 New env vars
+
+```powershell
+$env:VORTEX_NO_ENGINE = '1'   # force Tier 1 (skip engine even if installed)
+$env:VORTEX_NO_ENGINE = '0'   # require engine (throw if missing)
+# unset: best-effort (use Tier 2 if available, fall back to Tier 1)
+```
+
+## 7. API surface
+
+### New files (skill-side)
+
+```
+<skill>/
+  lib/
+    PS-Only/
+      Help.ps1
+      Version.ps1
+      Agents.ps1           # discover, inspect, validate, lint, graph, trace
+      AuditTrail.ps1
+      Hitl.ps1             # status, approve, deny
+      Decisions.ps1        # list, record
+      Package.ps1          # + SHA-1 in PowerShell
+  references/
+    LLM-FALLBACK.md        # the Tier 3 recipe
+```
+
+### New commands
+
+```
+--health                  # print tier + command matrix
+--recover-engine          # retry install.ps1
+--recover-engine -Force   # skip 6h auto-update cache
+```
+
+### Behavior changes
 
 | Command | Engine present | Engine absent |
 |---|---|---|
-| `--version`, `--help` | same | same |
-| `--agents-discover` | engine | **PS (new)** — reads agents/ directly |
-| `--agents-inspect`, `--agents-validate`, `--agents-lint` | engine | **PS (new)** — file I/O + `Test-Json` |
-| `--agents-graph` | engine | **PS (new)** — ASCII tree |
-| `--agents-trace` | engine | **PS (new)** — reads swarms/ |
-| `--audit-trail` | engine | **PS (new)** — last 50 lines of audit.jsonl |
-| `--hitl-status` | engine | **PS (new)** — pending_approvals/ |
-| `--hitl-approve`, `--hitl-deny` | engine | **PS (new)** — write checkpoint |
-| `--decision-list`, `--decision-record` | engine | **PS (new)** — decision_history.json |
-| `--package` | engine | **PS (new)** — copy + manifest + SHA-1 in PS |
-| `--dispatch-master`, `--dispatch-template`, `--dispatch-v4`, `--inspector-check` | engine | **clear error + recovery instructions** |
+| 14 file-I/O commands | engine | **PS (Tier 1)** |
+| `--dispatch-master/template/v4` | engine | **Tier 3 recipe** (clear hint to read `LLM-FALLBACK.md` if in LLM context) |
+| `--inspector-check` | engine | **Tier 3 recipe** |
 
-### New env var
-
-```powershell
-$env:VORTEX_NO_ENGINE = '1'  # force degraded mode (skip engine import even if installed)
-$env:VORTEX_NO_ENGINE = '0'  # require engine (throw if missing)
-# unset: best-effort — use engine if available, fall back to PS otherwise
-```
-
-## 7. Risks
+## 8. Risks
 
 | Risk | Likelihood | Impact | Mitigation |
 |---|---|---|---|
-| PS implementations of the engine commands diverge from the C++ versions (different output, different edge cases) | High | Medium | Phase 1: PS impl writes the same JSON shapes. Phase 2: a `tests/test_engine.ps1` regression check that runs the same command via both paths (when engine is loaded) and diffs the output. |
-| SHA-1 in PowerShell is slow for large files | Low | Low | `System.Security.Cryptography.SHA1` is the same .NET API the C++ engine uses; perf should be identical. |
-| Users in degraded mode get the wrong idea ("oh, the engine is gone, the skill is broken") | Medium | Low | The health banner + every engine-only error explains the situation. The 14 working commands make it clear the skill is functional, just limited. |
-| Two impls of the same command means twice the bug surface | Medium | Medium | PS impl is the "dumb" file-I/O version; engine impl is the "smart" compute version. The PS impl is the fallback, so a regression only affects degraded mode. |
-| An engine-only command sneaks in without degraded-mode handling | Low | High | A test in `verify.ps1` that runs every engine-only command in `$env:VORTEX_NO_ENGINE = 1` mode and asserts the error message is "engine unavailable". |
+| PS implementations of the 14 commands diverge from the C++ versions | High | Medium | `tests/test_engine.ps1` runs each command in both Tier 1 and Tier 2 mode and diffs the output. |
+| Tier 3 (LLM fallback) is slow | High | Low | Tier 3 is opt-in (only when Tier 2 fails). Users on a working Tier 2 never touch it. |
+| A coding agent LLM misinterprets the Tier 3 recipe and does the wrong thing | Medium | Medium | The recipe is explicit about what to do AND what not to do. Tests in `verify.ps1` assert the recipe file exists and contains the key steps. |
+| The LLM regenerates the engine from scratch (against directive) | Low | High | The recipe explicitly says "Do NOT try to compile a new C++ engine." Plus: on Windows, the engine either works or it doesn't. There's no in-session way to compile. |
+| Tier 1 (PowerShell) is slower than Tier 2 for the same command | Low | Low | SHA-1 in PowerShell uses the same .NET API. Other commands are pure file I/O. Negligible difference. |
+| Cross-platform users (someone on Linux/macOS) hit the Tier 1 banner | Low | Low | The banner says "Windows only." A Linux user gets the same Tier 1 behavior (14 commands work) and the Tier 2 / Tier 3 hints are advisory. |
 
-## 8. Acceptance criteria
+## 9. Acceptance criteria
 
-1. `pwsh -NoProfile -File .\skill.ps1 --health` works without any engine installed and shows the 14 OK + 4 ENGINE rows.
-2. `pwsh -NoProfile -File .\skill.ps1 --agents-discover` works in degraded mode and returns the same agent list as the engine version.
-3. `pwsh -NoProfile -File .\skill.ps1 --package <id>` works in degraded mode and produces a `.manifest.json` with valid 16-hex SHA-1 checksums.
-4. `pwsh -NoProfile -File .\skill.ps1 --decision-list` / `--decision-record` work in degraded mode and the file format matches what the engine writes.
-5. `pwsh -NoProfile -File .\skill.ps1 --dispatch-master <md>` in degraded mode prints a clear "engine unavailable, run --recover-engine" error and exits 2.
-6. `pwsh -NoProfile -File .\skill.ps1 --recover-engine` either succeeds (engine installed) or prints a clear network/GitHub error.
-7. With the engine installed, every command behaves exactly as it does today (no behavior change for the happy path).
-8. `verify.ps1` adds a new check `tests/test_degraded_mode.ps1` that sets `VORTEX_NO_ENGINE=1` and exercises every degraded-mode command.
-
-## 9. Open questions
-
-- **Q1.** Should the PS implementation of `--package` skip the SHA-1 checksum (it's optional per ADR-015) when the engine is absent, or always compute it? — *Recommend: always compute (same .NET SHA-1, identical perf).*
-- **Q2.** Should the PS layer cache the engine's output for `--agents-lint` so a fresh install can replay the cache while the engine is being downloaded? — *Recommend: no, the lint is fast and stale cache hides real bugs.*
-- **Q3.** When the engine recovers, should we re-run the previous failed dispatch automatically, or require the user to re-invoke? — *Recommend: require re-invoke. The dispatch is heavy and the operator may have moved on.*
-- **Q4.** Should `--health` be JSON-able for CI consumption? — *Recommend: yes, add `--health --json`.*
+1. `pwsh -NoProfile -File .\skill.ps1 --health` works without any engine installed and shows the tier + command matrix.
+2. `pwsh -NoProfile -File .\skill.ps1 --agents-discover` works in Tier 1 mode and returns the same agent list as Tier 2.
+3. `pwsh -NoProfile -File .\skill.ps1 --package <id>` works in Tier 1 mode and produces a `.manifest.json` with valid 16-hex SHA-1 checksums (identical to Tier 2's).
+4. `pwsh -NoProfile -File .\skill.ps1 --decision-list` / `--decision-record` work in Tier 1 mode and the file format matches what Tier 2 writes.
+5. `pwsh -NoProfile -File .\skill.ps1 --dispatch-master <md>` in Tier 1 mode prints a clear message pointing to `references/LLM-FALLBACK.md`.
+6. The `references/LLM-FALLBACK.md` file exists and contains the recipe (verified by a test in `verify.ps1`).
+7. `pwsh -NoProfile -File .\skill.ps1 --recover-engine` either succeeds (engine installed) or prints a clear network/GitHub error.
+8. With the engine installed, every command behaves exactly as it does today (no behavior change for the happy path).
+9. `verify.ps1` adds `tests/test_tier1.ps1` that runs every Tier 1 command in `$env:VORTEX_NO_ENGINE = 1` mode and asserts the output.
+10. `verify.ps1` adds `tests/test_tier2_compat.ps1` that runs the same commands in Tier 2 mode and diffs the output against Tier 1.
 
 ## 10. Effort
 
-- `skill.ps1` changes: ~300 lines
-- New tests: ~200 lines (`tests/test_degraded_mode.ps1`)
-- `verify.ps1` integration: ~50 lines
-- Documentation: `idea-future-recommendations.md` item 8 → ✅ status, `references/INSTRUCTIONS.md` updated
-- Engine changes: **0 lines**
+- `lib/PS-Only/*.ps1` (14 commands): ~600 LoC
+- `lib/Vortex.Streamer.psm1` (the engine detection + dispatch): ~150 LoC
+- `references/LLM-FALLBACK.md`: ~100 LoC of Markdown
+- New tests: ~300 LoC (`tests/test_tier1.ps1` + `tests/test_tier2_compat.ps1`)
+- `verify.ps1` integration: ~50 LoC
+- Engine changes: **0 LoC**
 
-**Total: ~550 lines of skill-side code. 1 PR. ~2-3 days for a single engineer.**
+**Total: ~1200 LoC of skill-side code + ~100 LoC of docs. 1 PR. ~1 week for a single engineer.**
+
+## 11. Open questions
+
+- **Q1.** Should Tier 3 (LLM fallback) be opt-in via a flag, or automatic when the dispatcher is an LLM-coding-agent? — *Recommend: automatic, gated by detection. The skill shell detects `Mavis/Codex/Copilot` env vars and shows the Tier 3 hint. For non-LLM dispatchers, just shows the Tier 2 error.*
+- **Q2.** Should the Tier 1 PS implementations cache their results so a Tier 2 (re-)install doesn't re-run everything? — *Recommend: no, file I/O is fast and stale cache hides real bugs.*
+- **Q3.** When the engine recovers, should the next dispatch auto-use Tier 2? — *Recommend: yes, no special action needed. The detection is per-invocation.*
+- **Q4.** Should the Tier 3 recipe be in `SKILL.md` (visible to the trigger-detection LLM) or in a separate file? — *Recommend: separate file `references/LLM-FALLBACK.md`. SKILL.md stays lean.*
+- **Q5.** Should the LLM fallback write a special `state/last_tier3_dispatch.json` so a human operator can see when the LLM took over? — *Recommend: yes, useful for audit. The file lists the task_id, the start/end timestamps, the deliverables produced, and the agent(s) used.*
+
+## 12. Future work (deferred to v2.x)
+
+- **Linux/macOS support** — option A (self-contained .NET host), B (Mono), or C (two engines). The user has explicitly deferred this.
+- **Native CLI for Mac/Linux** — `vortex` binary (not `skill.ps1`) for users who don't have PowerShell. Deferred.
+- **Tier 3 verification** — a test that runs `pwsh -NoProfile -File .\skill.ps1 --dispatch-master ...` with the engine absent and the dispatcher set to a mock LLM, then asserts the deliverables are correct. Hard to do in CI; maybe a manual smoke test.
