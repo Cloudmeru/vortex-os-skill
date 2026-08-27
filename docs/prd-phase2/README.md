@@ -8,7 +8,7 @@ Six PRDs for VORTEX-OS phase 2 (the "capability phase" from `idea-future-recomme
 
 | # | PRD | Status | Depends on | User said |
 |---|-----|--------|------------|-----------|
-| 1 | [PRD-08: Engine Unavailable — 3-Tier Fallback](prd-08-engine-unavailable-degraded-mode.md) | Draft | — | "explain if engine is unavailable can it still survive" — PRD revised 2026-08-27 to add Tier 3 (LLM-as-engine fallback) per user insight |
+| 1 | [PRD-08: Engine Unavailable — 2-Tier Fallback (Engine + LLM)](prd-08-engine-unavailable-degraded-mode.md) | Draft | — | "explain if engine is unavailable can it still survive" — first revision added 3-tier (PS + engine + LLM), second revision (2026-08-27) simplified to 2-tier after user rejected the parallel PowerShell implementation |
 | 2 | [PRD-10: Multi-User / Shared VORTEX_HOME](prd-10-shared-vortex-home.md) | Draft | — | "ok this is a good approach" — agree |
 | 3 | [PRD-11: Engine Plugin System](prd-11-plugin-system.md) | Draft | PRD-08 | "ok agree, suggest plugins, make prd first" |
 | 4 | [PRD-12: Cost / Token Budgeting](prd-12-cost-token-budgeting.md) | Draft | — | "ok i agree" |
@@ -19,22 +19,29 @@ Six PRDs for VORTEX-OS phase 2 (the "capability phase" from `idea-future-recomme
 
 ```
                         ┌─────────────────────────────┐
-                        │ Tier 1: PowerShell shell     │
-                        │ (always present, ~600 LoC)   │
-                        │ 14 commands: --version,      │
-                        │ --help, --health, --agents-*,│
-                        │ --audit-trail, --hitl-*,     │
-                        │ --decision-*, --package      │
-                        │ Window-only, no install      │
+                        │ PowerShell shell (skill.ps1) │
+                        │ THIN ROUTING ONLY. ~50 LoC.  │
+                        │ - parse args                 │
+                        │ - find / install / load      │
+                        │   the engine                 │
+                        │ - forward argv               │
+                        │ - show health banner if      │
+                        │   engine missing             │
+                        │ - show Tier 2 recipe         │
+                        │   pointer if dispatch is     │
+                        │   attempted                  │
                         └────────────┬────────────────┘
                                      │
-                                     │ if Vortex.dll loads:
+                                     │ if Vortex.dll loads
+                                     │ (the ONLY engine)
                                      ▼
                         ┌─────────────────────────────┐
-                        │ Tier 2: C++/CLI engine       │
-                        │ (Vortex.dll, 84 KB, v0.1.9)  │
-                        │ 4-tier dispatch, Continuity  │
-                        │ Engine, self-heal, SHA-1     │
+                        │ Tier 1: C++/CLI engine       │
+                        │ (Vortex.dll, 84 KB, v0.1.9+) │
+                        │ Canonical implementation     │
+                        │ of every command.            │
+                        │ The only engine. No          │
+                        │ parallel implementations.    │
                         │ WINDOWS ONLY                 │
                         └────────────┬────────────────┘
                                      │
@@ -44,9 +51,9 @@ Six PRDs for VORTEX-OS phase 2 (the "capability phase" from `idea-future-recomme
                                      │ Codex, Copilot):
                                      ▼
                         ┌─────────────────────────────┐
-                        │ Tier 3: LLM-as-engine        │
-                        │ (documented recipe only,     │
-                        │  no code)                    │
+                        │ Tier 2: LLM-as-engine        │
+                        │ DOCUMENTED RECIPE ONLY.      │
+                        │ (references/LLM-FALLBACK.md)│
                         │ The LLM reads SKILL.md,       │
                         │ agent manifests, templates,  │
                         │ decision history; drives the │
