@@ -1,0 +1,23 @@
+{
+  "name": "data-researcher",
+  "version": "1.0.0",
+  "author": "VORTEX-OS",
+  "license": "MIT",
+  "description": "Web search + document analysis. Wraps MiniMax-Text-01 + a search API.",
+  "capability": "research",
+  "inputs": {
+    "question":  { "type": "string",  "required": true,  "description": "The research question" },
+    "context":   { "type": "string",  "required": false, "description": "Optional context / background to seed the research" },
+    "depth":     { "type": "string",  "required": false, "default": "standard", "enum": ["quick", "standard", "deep"] }
+  },
+  "outputs": {
+    "report":  { "type": "string",  "description": "A multi-paragraph research report" },
+    "sources": { "type": "array",   "items": { "type": "string" }, "description": "List of source URLs referenced" },
+    "summary": { "type": "string",  "description": "One-line TL;DR" }
+  },
+  "command": {
+    "type": "powershell",
+    "entry": "invoke.ps1",
+    "timeout_s": 300
+  }
+}

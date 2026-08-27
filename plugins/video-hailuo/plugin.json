@@ -1,0 +1,24 @@
+{
+  "name": "video-hailuo",
+  "version": "1.0.0",
+  "author": "VORTEX-OS",
+  "license": "MIT",
+  "description": "Cinematic video clips. Wraps MiniMax-Hailuo-2.3.",
+  "capability": "video",
+  "inputs": {
+    "prompt":     { "type": "string",  "required": true,  "description": "Cinematic prompt / shot description" },
+    "duration_s": { "type": "integer", "required": false, "default": 6, "description": "Clip length in seconds" },
+    "aspect":     { "type": "string",  "required": false, "default": "16:9", "enum": ["16:9", "9:16", "1:1"] },
+    "fps":        { "type": "integer", "required": false, "default": 24 }
+  },
+  "outputs": {
+    "file":       { "type": "string", "description": "Absolute path to the generated video file" },
+    "duration_s": { "type": "number", "description": "Actual duration in seconds" },
+    "format":     { "type": "string", "description": "The file format (mp4)" }
+  },
+  "command": {
+    "type": "powershell",
+    "entry": "invoke.ps1",
+    "timeout_s": 600
+  }
+}

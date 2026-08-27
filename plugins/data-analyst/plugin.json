@@ -1,0 +1,22 @@
+{
+  "name": "data-analyst",
+  "version": "1.0.0",
+  "author": "VORTEX-OS",
+  "license": "MIT",
+  "description": "Data crunching and chart-generation. Wraps MiniMax-Text-01 + Python (subprocess).",
+  "capability": "data",
+  "inputs": {
+    "data":      { "type": "string",  "required": true,  "description": "The data (CSV, JSON, or path to a file)" },
+    "question":  { "type": "string",  "required": true,  "description": "What to find / compute" },
+    "chart":     { "type": "string",  "required": false, "enum": ["bar", "line", "scatter", "pie", "none"], "default": "bar" }
+  },
+  "outputs": {
+    "answer":  { "type": "string",  "description": "Plain-text answer to the question" },
+    "chart":   { "type": "string",  "description": "Absolute path to the generated chart PNG (if any)" }
+  },
+  "command": {
+    "type": "powershell",
+    "entry": "invoke.ps1",
+    "timeout_s": 300
+  }
+}

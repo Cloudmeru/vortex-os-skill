@@ -1,0 +1,22 @@
+{
+  "name": "video-animator",
+  "version": "1.0.0",
+  "author": "VORTEX-OS",
+  "license": "MIT",
+  "description": "Animation / motion graphics. Wraps MiniMax-H3.",
+  "capability": "video",
+  "inputs": {
+    "prompt":     { "type": "string",  "required": true,  "description": "Animation description" },
+    "duration_s": { "type": "integer", "required": false, "default": 4 },
+    "style":      { "type": "string",  "required": false, "default": "motion-graphics", "enum": ["motion-graphics", "kinetic-typography", "logo-reveal", "infographic"] }
+  },
+  "outputs": {
+    "file":       { "type": "string", "description": "Absolute path to the generated animation" },
+    "duration_s": { "type": "number", "description": "Actual duration in seconds" }
+  },
+  "command": {
+    "type": "powershell",
+    "entry": "invoke.ps1",
+    "timeout_s": 600
+  }
+}
