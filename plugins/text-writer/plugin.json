@@ -1,0 +1,24 @@
+{
+  "name": "text-writer",
+  "version": "1.0.0",
+  "author": "VORTEX-OS",
+  "license": "MIT",
+  "description": "Long-form prose generation (chapters, articles, scripts). Wraps MiniMax-Text-01.",
+  "capability": "text",
+  "inputs": {
+    "prompt":      { "type": "string",  "required": true,  "description": "Writing brief / prompt" },
+    "style":       { "type": "string",  "required": false, "default": "literary", "enum": ["literary", "technical", "casual", "screenplay", "academic"] },
+    "word_target": { "type": "integer", "required": false, "default": 800, "description": "Approximate target word count" },
+    "system":      { "type": "string",  "required": false, "default": "", "description": "Optional system prompt override" }
+  },
+  "outputs": {
+    "text":       { "type": "string", "description": "The generated prose" },
+    "word_count": { "type": "integer", "description": "Actual word count" },
+    "model":      { "type": "string", "description": "Model used" }
+  },
+  "command": {
+    "type": "powershell",
+    "entry": "invoke.ps1",
+    "timeout_s": 300
+  }
+}
