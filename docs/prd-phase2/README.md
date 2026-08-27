@@ -2,11 +2,13 @@
 
 Six PRDs for VORTEX-OS phase 2 (the "capability phase" from `idea-future-recommendations.md`). Read in order — each PRD depends on the previous ones.
 
+**Scope (revised 2026-08-27): Windows only.** Cross-platform support (item 8 options A/B/C) is deferred to v2.x per user direction.
+
 ## Reading order
 
 | # | PRD | Status | Depends on | User said |
 |---|-----|--------|------------|-----------|
-| 1 | [PRD-08: Engine Unavailable — Degraded Mode](prd-08-engine-unavailable-degraded-mode.md) | Draft | — | "explain if engine is unavailable can it still survive" — make PRD |
+| 1 | [PRD-08: Engine Unavailable — 3-Tier Fallback](prd-08-engine-unavailable-degraded-mode.md) | Draft | — | "explain if engine is unavailable can it still survive" — PRD revised 2026-08-27 to add Tier 3 (LLM-as-engine fallback) per user insight |
 | 2 | [PRD-10: Multi-User / Shared VORTEX_HOME](prd-10-shared-vortex-home.md) | Draft | — | "ok this is a good approach" — agree |
 | 3 | [PRD-11: Engine Plugin System](prd-11-plugin-system.md) | Draft | PRD-08 | "ok agree, suggest plugins, make prd first" |
 | 4 | [PRD-12: Cost / Token Budgeting](prd-12-cost-token-budgeting.md) | Draft | — | "ok i agree" |
@@ -17,44 +19,40 @@ Six PRDs for VORTEX-OS phase 2 (the "capability phase" from `idea-future-recomme
 
 ```
                         ┌─────────────────────────────┐
-                        │   PowerShell skill shell    │
-                        │  (always present, ~600 LoC) │
-                        │  --version, --help,         │
-                        │  --health, --recover-engine │
-                        │  --agents-*, --audit-trail, │
-                        │  --hitl-*, --decision-*,    │
-                        │  --package, --cost-report,  │
-                        │  --stream, --hint           │
+                        │ Tier 1: PowerShell shell     │
+                        │ (always present, ~600 LoC)   │
+                        │ 14 commands: --version,      │
+                        │ --help, --health, --agents-*,│
+                        │ --audit-trail, --hitl-*,     │
+                        │ --decision-*, --package      │
+                        │ Window-only, no install      │
                         └────────────┬────────────────┘
                                      │
+                                     │ if Vortex.dll loads:
                                      ▼
-            ┌────────────────────────────────────────────┐
-            │          Vortex.dll engine core            │
-            │  ┌────────────┐  ┌──────────┐  ┌─────────┐  │
-            │  │ 4-tier     │  │ Cost     │  │ Stream  │  │
-            │  │ dispatch   │  │ tracker  │  │ sink    │  │
-            │  │ (planner   │  │ (budgets │  │ (writes │  │
-            │  │  → super   │  │  +       │  │  .part- │  │
-            │  │  → shift   │  │ alerts)  │  │  ial    │  │
-            │  │  → plugin) │  │          │  │  files) │  │
-            │  └────────────┘  └──────────┘  └─────────┘  │
-            │  ┌────────────┐  ┌──────────┐  ┌─────────┐  │
-            │  │ Continuity │  │ Decision │  │ Audit   │  │
-            │  │ Engine     │  │ history  │  │ emitter │  │
-            │  │ (8 rules)  │  │ (CRIT-   │  │ (every  │  │
-            │  │            │  │ ical-    │  │  event  │  │
-            │  │            │  │  gate    │  │  to     │  │
-            │  │            │  │  replay) │  │  jsonl) │  │
-            │  └────────────┘  └──────────┘  └─────────┘  │
-            └─────────┬──────────────────────────────────┘
-                      │
-                      ▼  plugin invocation
-        ┌──────────────────────────────────────────────┐
-        │   Plugin (PowerShell script or binary)       │
-        │   text-writer, audio-foley, image-portrait,  │
-        │   code-typescript, video-hailuo, ...         │
-        │   (17 reference plugins ship with the skill) │
-        └──────────────────────────────────────────────┘
+                        ┌─────────────────────────────┐
+                        │ Tier 2: C++/CLI engine       │
+                        │ (Vortex.dll, 84 KB, v0.1.9)  │
+                        │ 4-tier dispatch, Continuity  │
+                        │ Engine, self-heal, SHA-1     │
+                        │ WINDOWS ONLY                 │
+                        └────────────┬────────────────┘
+                                     │
+                                     │ if engine unavailable
+                                     │ AND in an LLM-coding-
+                                     │ agent context (Mavis,
+                                     │ Codex, Copilot):
+                                     ▼
+                        ┌─────────────────────────────┐
+                        │ Tier 3: LLM-as-engine        │
+                        │ (documented recipe only,     │
+                        │  no code)                    │
+                        │ The LLM reads SKILL.md,       │
+                        │ agent manifests, templates,  │
+                        │ decision history; drives the │
+                        │ dispatch in-place            │
+                        │ Slow but RESILIENT            │
+                        └─────────────────────────────┘
 ```
 
 ## Implementation order (recommended)
@@ -96,6 +94,7 @@ These are cross-cutting questions that affect all 6 PRDs. Resolve them in `idea-
 - **No real-time LLM token streaming.** That's a separate feature.
 - **No cross-machine dispatch.** Use shared VORTEX_HOME + manual coordination.
 - **No SaaS billing / metering.** Cost log is the source of truth; user exports to their accounting system.
+- **No Linux / macOS support** (Windows only, per user direction 2026-08-27). The cross-platform options A/B/C in `idea-future-recommendations.md` item 8 are explicitly deferred to v2.x.
 
 ## How to use this folder
 
