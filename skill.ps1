@@ -1,5 +1,5 @@
 # =============================================================================
-# skill.ps1 — VORTEX-OS dispatcher entry point (PowerShell 7+, v0.1.11)
+# skill.ps1 — VORTEX-OS dispatcher entry point (PowerShell 7+, v0.2.2)
 # =============================================================================
 # Thin routing layer for the C++/CLI engine (Vortex.dll). The engine is the
 # ONLY implementation of every command; this script:
@@ -328,6 +328,91 @@ if ($Arguments -and ($Arguments -contains '--audit-trail')) {
 
     Get-VortexAuditTrail @splat
     exit 0
+}
+
+# --- 5b. --audit-trail user filter (PRD-10) ----------------------------------
+# In team mode, the audit log is sharded per-user. The viewer's -User /
+# -AllUsers flags let the operator pick which shard to view. We extract
+# them here so the engine call stays clean.
+if ($Arguments -and ($Arguments -contains '--audit-trail') -and
+    ($Arguments -contains '--user' -or ($Arguments | Where-Object { $_ -like '--user=*' }) -or
+     $Arguments -contains '--all-users')) {
+    $viewerPath = Join-Path $here 'lib\Vortex.AuditViewer.psm1'
+    if (Test-Path $viewerPath) {
+        Import-Module $viewerPath -Force
+        $fmt = if ($AuditFormat) { $AuditFormat } else { 'table' }
+        $splat = @{ Format = $fmt }
+        $allUsers = $false
+        for ($i = 0; $i -lt $Arguments.Count; $i++) {
+            $a = $Arguments[$i]
+            switch -Regex ($a) {
+                '^--user=(.+)$' { $splat['Project'] = $Matches[1]; $Arguments[$i] = $null; continue }
+                '^--user$'      { if ($i + 1 -lt $Arguments.Count) { $splat['Project'] = $Arguments[$i + 1]; $Arguments[$i + 1] = $null; $Arguments[$i] = $null; $i++ }; continue }
+                '^--all-users$'  { $allUsers = $true; $Arguments[$i] = $null; continue }
+            }
+        }
+        # When --all-users, the viewer falls back to reading the shared
+        # audit.jsonl (which in team mode is a generated aggregate). For
+        # now, --all-users reads the per-user shard of the current user.
+        if ($allUsers) { $splat['Project'] = '' }
+        # Drop the trigger and any consumed filters.
+        $Arguments = @($Arguments | Where-Object { $_ -ne $null -and $_ -ne '--audit-trail' })
+        Get-VortexAuditTrail @splat
+        exit 0
+    }
+}
+
+# --- 5c. Streaming (PRD-14) --------------------------------------------------
+# Short-circuit the streaming flags to the rich Vortex.Streamer module
+# BEFORE the engine's basic dump can mix with the streamed output. The
+# streamer wraps FileSystemWatcher + y/n/q interactive prompts.
+if ($Arguments -and (
+    $Arguments -contains '--stream-list' -or
+    ($Arguments | Where-Object { $_ -like '--stream' -or $_ -like '--stream=*' }) -or
+    $Arguments -contains '--stream-stop' -or
+    ($Arguments | Where-Object { $_ -like '--hint' -or $_ -like '--hint=*' })
+)) {
+    $streamerPath = Join-Path $here 'lib\Vortex.Streamer.psm1'
+    if (-not (Test-Path $streamerPath)) {
+        Write-Host "ERROR: streaming module missing at $streamerPath" -ForegroundColor Red
+        exit 2
+    }
+    Import-Module $streamerPath -Force
+
+    if ($Arguments -contains '--stream-list') {
+        # Delegate to the engine's --stream-list which prints the canonical
+        # "(no in-progress dispatches)" line when empty.
+        $Arguments = @($Arguments | Where-Object { $_ -ne '--stream-list' })
+        Invoke-Vortex -Arguments @('--stream-list')
+        exit (Get-VortexLastExitCode)
+    }
+    # Extract the streaming sub-command + args.
+    for ($i = 0; $i -lt $Arguments.Count; $i++) {
+        $a = $Arguments[$i]
+        if ($a -eq '--stream') {
+            if ($i + 1 -lt $Arguments.Count) {
+                $taskId = $Arguments[$i + 1]
+                $autoOpen = ($Arguments -contains '--auto-open')
+                $Arguments[$i] = $null; $Arguments[$i + 1] = $null; $i++
+                Start-VortexStream -TaskId $taskId -AutoOpen:$autoOpen
+                exit 0
+            }
+        } elseif ($a -eq '--stream-stop') {
+            if ($i + 1 -lt $Arguments.Count) {
+                Stop-VortexStream -TaskId $Arguments[$i + 1]
+                $Arguments[$i] = $null; $Arguments[$i + 1] = $null; $i++
+                exit 0
+            }
+        } elseif ($a -eq '--hint') {
+            if ($i + 2 -lt $Arguments.Count -and $Arguments[$i + 1] -eq '--text') {
+                Send-VortexHint -TaskId '' -Text $Arguments[$i + 2]
+                # The engine call below handles the real write (the streamer
+                # delegates via skill.ps1 --hint, which the engine resolves).
+                $Arguments = @($Arguments | Where-Object { $_ -ne $null })
+                break
+            }
+        }
+    }
 }
 
 # --- 6. Dispatch ------------------------------------------------------------

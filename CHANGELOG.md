@@ -4,6 +4,45 @@ All notable changes to the VORTEX-OS skill package are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.2.2] - 2026-08-27
+
+### Added
+- **Multi-user team mode (PRD-10).** When two or more operators share a
+  VORTEX_HOME, each one gets their own per-user shards for the audit log,
+  HITL pending approvals, in-progress dispatches, and tasks. Deliverables
+  stay shared so the team can see everyone's output in one place.
+- **`setup-team.ps1`** — interactive + `-Yes` + `-Verify` modes. Writes
+  `$VORTEX_HOME/.vortex/config.json` (the engine reads it at startup) and
+  creates the per-user subdirs under `state/`, `memory/`, `tasks/`.
+- **`lib/Vortex.Streamer.psm1`** — the operator-facing streaming console.
+  - `Start-VortexStream -TaskId <id>` — attaches a FileSystemWatcher (with
+    a 2s polling fallback) to `state/<user>/in_progress/<id>/` and prompts
+    y/n/q for each new `.partial` file.
+  - `Stop-VortexStream -TaskId <id>` — detach.
+  - `Send-VortexHint -TaskId <id> -Text "..."` — append to `.hints.jsonl`.
+  - `Get-VortexStream` — list all in-progress dispatches.
+- **`skill.ps1` short-circuits** the streaming flags (`--stream-list`,
+  `--stream <id>`, `--stream-stop <id>`, `--hint <id> --text "..."`) so
+  they don't need to round-trip through the engine for every keystroke.
+  `--stream-list` delegates to the engine so the output matches the
+  canonical `(no in-progress dispatches)` line.
+
+### Changed
+- **`--audit-trail`** now accepts `--user <name>` and `--all-users`
+  filters so an operator can inspect their own shard or the team-wide
+  audit trail across all users.
+- **`--stream-list` output** adds an `in_progress: <path>` line so the
+  operator knows where the `.partial` files live (and so the test harness
+  can assert the path).
+
+### Engine dependency
+- Requires [vortex-os-dotnet v0.2.2](https://github.com/Cloudmeru/vortex-os-dotnet/releases/tag/v0.2.2)
+  which adds `--team-config`, `--stream-list`, `--stream`, `--stream-stop`,
+  `--hint`, `--stream-finalize`, the `FileLock` + `StreamSink` libs, and
+  per-user sharding via `PathResolver::ApplyTeamConfig`. The engine reads
+  `.vortex/config.json` at startup and re-resolves paths if team mode
+  changes between runs.
+
 ## [0.2.1] - 2026-08-27
 
 ### Added
