@@ -4,6 +4,46 @@ All notable changes to the VORTEX-OS skill package are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.1.12] - 2026-08-27
+
+### Added
+- **`lib/Vortex.AuditViewer.psm1`** (new, ~13 KB). The PowerShell
+  viewer for the VORTEX-OS audit log. Exports `Get-VortexAuditTrail` with
+  six output formats (`table` / `tree` / `selfheal` / `hitl` / `json`
+  / `html`) and five filters (`-Project` / `-Task` / `-Agent` /
+  `-Severity` / `-Since` / `-Last`). The viewer reads
+  `$env:VORTEX_HOME\memory\audit.jsonl` and is fully backward-compatible
+  with the v0.1.10 log schema (missing fields are returned as empty).
+- **`--AuditFormat` flag on `skill.ps1`.** Short-circuits `--audit-trail`
+  to the viewer before the engine's basic dump can mix with the rich
+  output. Single-word flag (no alias needed). Default format is `table`.
+- **`--project=<slug>`, `--task=<id>`, `--agent=<name>`, `--severity=<lvl>`,
+  `--since=<iso>`, `--last=<n>` filters.** All forwarded to the
+  viewer's `-Project` / `-Task` / `-Agent` / `-Severity` / `-Since`
+  / `-Last` parameters.
+
+### Changed
+- **Removed `[string] $Project` from `skill.ps1`.** It was greedily
+  binding the engine's `--project` arg (a known PowerShell param-auto-
+  binding pitfall), which broke `--cost-report --project <slug>` and
+  other dispatch commands. Project name is now communicated exclusively
+  via `$env:VORTEX_PROJECT` (read by the engine in `ResolveProjectName`).
+- **`skill.ps1` version bump** to 0.1.12. Requires engine v0.1.11+ for
+  the new audit fields (older engines still work — the viewer treats
+  missing fields as empty).
+- **`SKILL.md` + `_meta.json` + `CHANGELOG.md` version bump** to 0.1.12.
+
+### Engine dependency
+- Requires [vortex-os-dotnet v0.1.11](https://github.com/Cloudmeru/vortex-os-dotnet/releases/tag/v0.1.11)
+  (auto-updated on next `skill.ps1` invocation, or run
+  `skill.ps1 --recover-engine` to force the install).
+
+### Compatibility
+- v0.1.11 engine is forward-compatible with v0.1.10 viewers (the
+  extra fields are simply ignored).
+- v0.1.12 viewer is backward-compatible with v0.1.10 engines (missing
+  fields are returned as empty strings / empty arrays).
+
 ## [0.1.10] - 2026-08-27
 
 ### Added
