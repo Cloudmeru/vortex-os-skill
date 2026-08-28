@@ -1,16 +1,20 @@
-# audio-music plugin — background music loops
-# v0.2.1 reference plugin. Stub: writes a silent WAV (real impl wraps MiniMax-Music).
+# audio-music plugin -- background music loops
+# v0.3.5: defaults to mcode-tools batch_text_to_music, falls back to
+# ffmpeg-generated tone, then to silent WAV.
 [CmdletBinding()]
 param()
 $ErrorActionPreference = 'Stop'
 $sdkPath = Join-Path $PSScriptRoot '..\..\plugin-sdk\Vortex.Plugin.psm1'
 Import-Module $sdkPath -Force
+
 $inputs = Get-VortexPluginInput
+$prompt = $inputs.prompt
 $duration = if ($inputs.PSObject.Properties.Name -contains 'duration_s') { [int]$inputs.duration_s } else { 30 }
 $format = if ($inputs.PSObject.Properties.Name -contains 'format') { $inputs.format } else { 'wav' }
-Write-VortexPluginLog "audio-music invoked: prompt='$($inputs.prompt)' duration=${duration}s"
+$bpm = if ($inputs.PSObject.Properties.Name -contains 'bpm') { [int]$inputs.bpm } else { 0 }
+Write-VortexPluginLog "audio-music invoked: prompt='$prompt' duration=${duration}s bpm=$bpm format=$format"
 
-# Stub: silent WAV
+# Build output path
 $vortexHome = $env:VORTEX_HOME
 if (-not $vortexHome) { $vortexHome = Join-Path $env:APPDATA 'Vortex-OS' }
 $project = if ($env:VORTEX_PROJECT) { $env:VORTEX_PROJECT } else { 'default' }
@@ -18,17 +22,27 @@ $outDir = Join-Path $vortexHome 'deliverables' $project
 if (-not (Test-Path $outDir)) { New-Item -ItemType Directory -Path $outDir -Force | Out-Null }
 $ts = Get-Date -Format 'yyyyMMddHHmmss'
 $outFile = Join-Path $outDir "music_${ts}.${format}"
-$header = [System.Text.Encoding]::ASCII.GetBytes('RIFF')
-$header += [System.BitConverter]::GetBytes(36)
-$header += [System.Text.Encoding]::ASCII.GetBytes('WAVEfmt ')
-$header += [System.BitConverter]::GetBytes(16)
-$header += [System.Text.Encoding]::ASCII.GetBytes([char]1) + [System.Text.Encoding]::ASCII.GetBytes([char]0)
-$header += [System.BitConverter]::GetBytes(1)
-$header += [System.BitConverter]::GetBytes(44100)
-$header += [System.BitConverter]::GetBytes(88200)
-$header += [System.Text.Encoding]::ASCII.GetBytes([char]2) + [System.Text.Encoding]::ASCII.GetBytes([char]0)
-$header += [System.Text.Encoding]::ASCII.GetBytes([char]16) + [System.Text.Encoding]::ASCII.GetBytes([char]0)
-$header += [System.Text.Encoding]::ASCII.GetBytes('data')
-$header += [System.BitConverter]::GetBytes(0)
-[System.IO.File]::WriteAllBytes($outFile, $header)
-Write-VortexPluginOutput @{ file = $outFile; duration_s = $duration; format = $format }
+
+# Try mcode-tools first; fall back to ffmpeg tone (frequency from bpm if set),
+# then to silent WAV
+$result = Invoke-VortexWithFallback `
+    -ToolName 'connector__matrix__batch_text_to_music' `
+    -Args @{
+        requests = @(@{
+            prompt      = $prompt
+            duration_s  = $duration
+            output_file = "music_${ts}.${format}"
+        })
+    } `
+    -DownloadTo $outFile `
+    -Fallback {
+        param($a, $out)
+        $req = $a.requests[0]
+        $dur = if ($req.PSObject.Properties.Name -contains 'duration_s') { [int]$req.duration_s } else { 30 }
+        $hz  = 440
+        if ($a.PSObject.Properties.Name -contains 'bpm' -and $a.bpm) { $hz = [int]$a.bpm }
+        New-VortexFfmpegToneWav -OutFile $out -DurationSec $dur -FrequencyHz $hz
+    }
+
+Write-VortexPluginLog "audio-music: produced via $($result.Provider)"
+Write-VortexPluginOutput @{ file = $result.File; duration_s = $duration; format = $format; provider = $result.Provider }

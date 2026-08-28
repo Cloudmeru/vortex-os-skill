@@ -93,3 +93,8 @@ walkthrough/slides/imgs/slide-*.jpg
 # Release artifacts (built by .github/workflows/release.yml)
 *.zip
 
+# OS file-copy artifacts (Dropbox / OneDrive / Explorer "save a copy")
+LICENSE - Copy
+LICENSE.*
+!*LICENSE
+

@@ -18,5 +18,17 @@
     "type": "powershell",
     "entry": "invoke.ps1",
     "timeout_s": 600
+  },
+  "fallback_chain": {
+    "primary": {
+      "name": "mcode-tools",
+      "tool": "connector__matrix__submit_video_generation",
+      "model": "MiniMax-H3",
+      "notes": "Cloud-hosted motion-graphics / animation via mcode-tools CLI with the MiniMax-H3 model (recommended for quality). Async submit + poll pattern (max wait 600s, poll every 10s). H3 renders a synchronized native audio track as part of the video, so no separate TTS step is needed."
+    },
+    "fallbacks": [
+      { "name": "local-ffmpeg-color",     "notes": "1-second ffmpeg color frame. Color is style-dependent (logo -> navy, infographic -> teal, kinetic -> crimson) so the operator can spot the fallback in the rendered file." },
+      { "name": "local-placeholder-text", "notes": "Plain-text file (last-ditch) when ffmpeg is not on PATH either." }
+    ]
   }
 }

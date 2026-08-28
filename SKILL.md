@@ -1,7 +1,7 @@
 ---
 name: VORTEX-OS
 display_name: VORTEX-OS - Multi-Agent Orchestration Engine
-version: 0.3.4
+version: 0.3.5
 description: |
   VORTEX-OS is a self-bootstrapping PowerShell skill that drives the
   [Cloudmeru/vortex-os-dotnet](https://github.com/Cloudmeru/vortex-os-dotnet)
@@ -128,6 +128,14 @@ the 4-line install contract, read [`COMPATIBILITY.md`](./COMPATIBILITY.md).
 - **Long-running / multi-iteration / series scope** — the user has a
   multi-iteration / multi-release / multi-chapter project and wants
   Golden Path templates that replay the same workflow for each unit
+- **Media production with graceful degradation** — the user wants a
+  media deliverable (image / audio / video / music / TTS / foley) and
+  the pipeline must keep producing valid output files even when
+  mcode-tools is offline or unauthenticated. The skill's media
+  plugins default to mcode-tools (the cloud path) and fall back to
+  local alternatives (SAPI TTS, ffmpeg tone, ffmpeg color frame,
+  silent WAV, 1x1 PNG) — the audit log records which provider
+  produced each asset.
 - **Cross-project context reuse** — the user has run similar projects
   before and wants the new dispatch to inherit the prior operator
   (plugin) profile, deliverable-type histogram, and known gotchas
@@ -181,6 +189,7 @@ This skill folder is laid out as follows. Read only what you need.
 | `verify.ps1` | **Post-upload verification** (8 checks: file presence, JSON validity, branding, agent discovery, agent lint, help banner, engine installation). Self-bootstrapping | Run before publishing; CI gate |
 | `build.ps1` | **Source-build helper** for forkers (downloads + compiles the .NET engine from `vortex-os-dotnet`) | Only if you've cloned this skill to fork the engine |
 | `agents/` | **3 supervisor/inspector manifest files** (the engine's input) | When writing custom agent manifests |
+| `plugin-sdk/Vortex.Plugin.psm1` | **Plugin author SDK**. Helper module every plugin `Import-Module`s. Exposes `Get-VortexPluginInput`, `Write-VortexPluginOutput`, `Write-VortexPluginLog`, `Invoke-VortexWithFallback` (mcode-tools → local-fallback chain), and 5 local placeholder generators (`New-VortexPlaceholderPng`, `New-VortexSilentWav`, `New-VortexSapiTtsWav`, `New-VortexFfmpegToneWav`, `New-VortexFfmpegColorFrameMp4`) | When writing or extending a plugin |
 | `templates/` | Golden Path iteration template (engine reads it when `--dispatch-template` is passed) | When designing a multi-iteration / multi-release workflow |
 
 ---

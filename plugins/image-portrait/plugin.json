@@ -21,5 +21,15 @@
     "type": "powershell",
     "entry": "invoke.ps1",
     "timeout_s": 300
+  },
+  "fallback_chain": {
+    "primary": {
+      "name": "mcode-tools",
+      "tool": "connector__matrix__generate_image",
+      "notes": "Cloud-hosted MiniMax image generation via mcode-tools CLI. Honors the seed input for reproducible portraits across takes."
+    },
+    "fallbacks": [
+      { "name": "local-placeholder-png", "notes": "1x1 transparent PNG (67 bytes). Last-ditch." }
+    ]
   }
 }

@@ -4,6 +4,47 @@ All notable changes to the VORTEX-OS skill package are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.3.5] - 2026-08-28
+
+### Added
+- **mcode-tools → fallback chain** in `plugin-sdk/Vortex.Plugin.psm1`.
+  Every media plugin (image-cover, image-portrait, image-map,
+  audio-voice, audio-music, audio-foley, video-hailuo, video-animator)
+  now defaults to the cloud-hosted `mcode-tools` connector and falls
+  back to a local alternative when mcode-tools is unavailable,
+  unauthenticated, or errors. The plugin ALWAYS produces a valid
+  output file matching its contract — the operator can see in the
+  audit log which provider produced each asset.
+- **New SDK helpers** in `Vortex.Plugin.psm1`:
+  - `Get-VortexMcodeToolsPath` / `Test-VortexMcodeToolsAvailable` — locate and probe the mcode-tools CLI.
+  - `Invoke-VortexMcodeConnector` — call `mcode-tools connector call <tool> --args <json>` and parse the result.
+  - `Get-VortexAssetUrl` / `Save-VortexAssetFromUrl` / `Invoke-VortexDownloadAsset` — fetch a temp URL for a returned `node_id` and download to a local path.
+  - `Invoke-VortexMcodeConnectorAsync` — submit + poll for `submit_video_generation` / `query_video_generation`.
+  - `Invoke-VortexWithFallback` — top-level: try mcode-tools, fall back to a scriptblock on failure.
+  - `New-VortexPlaceholderPng`, `New-VortexSilentWav`, `New-VortexSapiTtsWav`, `New-VortexFfmpegToneWav`, `New-VortexFfmpegColorFrameMp4` — the local fallback implementations.
+- **`fallback_chain` field** added to the 8 media plugin.json files
+  so the engine / operator / user can see the primary + fallback
+  chain at a glance (e.g. `mcode-tools` -> `local-sapi-tts` ->
+  `local-silent` for audio-voice).
+
+### Changed
+- **8 media plugin `invoke.ps1` files rewritten** to use
+  `Invoke-VortexWithFallback`. The previous versions wrote a 1x1 PNG /
+  silent WAV / placeholder text stub; the new versions try
+  mcode-tools first and only fall back to a local generator if
+  mcode-tools is unavailable.
+- **`SKILL.md` "Trigger Conditions"** now includes a "media
+  production with graceful degradation" bullet so the LLM knows
+  the skill will keep producing output even if mcode-tools is
+  offline. The plugin-sdk row in the anatomy table now lists the
+  new fallback helpers.
+- **`Vortex.Plugin.psm1` version header** bumped to v0.3.5.
+
+### No engine change
+- Engine v0.3.0 is still the minimum version; v0.3.5 is skill-side
+  only. The mcode-tools pipeline is a plugin-side detail — the
+  engine doesn't need to know about it.
+
 ## [0.3.4] - 2026-08-28
 
 ### Added

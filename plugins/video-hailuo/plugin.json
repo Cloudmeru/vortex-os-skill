@@ -20,5 +20,17 @@
     "type": "powershell",
     "entry": "invoke.ps1",
     "timeout_s": 600
+  },
+  "fallback_chain": {
+    "primary": {
+      "name": "mcode-tools",
+      "tool": "connector__matrix__submit_video_generation",
+      "model": "MiniMax-Hailuo-2.3",
+      "notes": "Cloud-hosted cinematic video generation via mcode-tools CLI. Async submit + poll pattern (max wait 600s, poll every 10s). Output is silent -- the audio-voice plugin adds narration in a separate step."
+    },
+    "fallbacks": [
+      { "name": "local-ffmpeg-color",     "notes": "1-second ffmpeg lavfi color frame matching the requested aspect ratio. Cheap placeholder that satisfies the contract." },
+      { "name": "local-placeholder-text", "notes": "Plain-text file (last-ditch) when ffmpeg is not on PATH either. The engine will see it as an invalid mp4 and the operator can spot the failure in the audit log." }
+    ]
   }
 }

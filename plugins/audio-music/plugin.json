@@ -20,5 +20,16 @@
     "type": "powershell",
     "entry": "invoke.ps1",
     "timeout_s": 300
+  },
+  "fallback_chain": {
+    "primary": {
+      "name": "mcode-tools",
+      "tool": "connector__matrix__batch_text_to_music",
+      "notes": "Cloud-hosted MiniMax music generation via mcode-tools CLI."
+    },
+    "fallbacks": [
+      { "name": "local-ffmpeg-tone", "notes": "ffmpeg lavfi sine-wave tone. Frequency defaults to 440 Hz, or to the bpm input if set. No music content, but a valid audio file matching the contract." },
+      { "name": "local-silent",      "notes": "Silent WAV. Last-ditch fallback." }
+    ]
   }
 }

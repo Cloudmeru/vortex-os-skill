@@ -19,5 +19,16 @@
     "type": "powershell",
     "entry": "invoke.ps1",
     "timeout_s": 300
+  },
+  "fallback_chain": {
+    "primary": {
+      "name": "mcode-tools",
+      "tool": "connector__matrix__synthesize_sound_effect",
+      "notes": "Cloud-hosted MiniMax foley / SFX generation via mcode-tools CLI. (Will fail silently if the connector is not registered -- falls through to the ffmpeg-tone path.)"
+    },
+    "fallbacks": [
+      { "name": "local-ffmpeg-tone", "notes": "ffmpeg sine-wave tone with a frequency derived deterministically from the prompt hash (200-1000 Hz range). Same prompt = same tone across runs, so cross-take consistency is preserved." },
+      { "name": "local-silent",      "notes": "Silent WAV. Last-ditch fallback." }
+    ]
   }
 }

@@ -19,5 +19,16 @@
     "type": "powershell",
     "entry": "invoke.ps1",
     "timeout_s": 120
+  },
+  "fallback_chain": {
+    "primary": {
+      "name": "mcode-tools",
+      "tool": "connector__matrix__synthesize_speech",
+      "notes": "Cloud-hosted MiniMax TTS via mcode-tools CLI. Returns node_id + file_name; SDK downloads the asset to the local output path."
+    },
+    "fallbacks": [
+      { "name": "local-sapi-tts",   "notes": "Windows System.Speech.Synthesis (SAPI). No network, no API key. Slightly lower quality but ships with Windows." },
+      { "name": "local-silent",     "notes": "Silent WAV header. Last-ditch so the contract is still satisfied when both mcode-tools and SAPI are unavailable." }
+    ]
   }
 }
