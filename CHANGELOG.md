@@ -4,6 +4,61 @@ All notable changes to the VORTEX-OS skill package are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.3.4] - 2026-08-28
+
+### Added
+- **`agents/media-stack.json`** (NEW, 4.6 KB) -- Tier 3 worker manifest
+  that bundles the 7 shipped media plugins (`image-cover`,
+  `image-portrait`, `audio-voice`, `audio-music`, `video-hailuo`,
+  `video-animator`, `media-ffmpeg`) into one dispatchable roster. The
+  engine can now dispatch a multi-deliverable media production
+  (tutorial video, ad cut, narrated slide deck, social clip) without
+  the LLM having to compose a manifest by hand. Closes the "no media
+  producer in `agents/`" gap.
+- **`templates/media-tutorial-video.json`** (NEW, 6.1 KB) -- Golden
+  Path template for "one source markdown / script -> finished media
+  deliverable." Defines the canonical 5-step flow (storyboard, hero
+  images, voiceover, BGM, final MP4), the 3 HITL gates (script,
+  visual+audio assembly, final pack), and 5 self-heal targets (tone
+  drift, style drift, color drift, pacing mismatch, audio level
+  mismatch). Ships with 3 dispatch examples (recipe shortcut, explicit
+  template dispatch, hand-written master objective).
+- **Media-production bullet** in `trigger.when_to_use` (_meta.json)
+  and a matching bullet in the "Trigger Conditions" section in
+  SKILL.md. The skill now explicitly advertises
+  "multi-step media production" as a supported use case so the LLM's
+  trigger-detection has a concrete match for "build me a video" /
+  "make an ad" / "turn this markdown into a tutorial" prompts.
+- **Recipe row in the SKILL.md command table** for
+  `pwsh skill.ps1 --dispatch-template templates\media-tutorial-video.json`
+  so the LLM has a one-line copy-paste starting point.
+
+### Changed
+- **Added boundary #8 to `references/INSTRUCTIONS.md` §8 "Important
+  Boundaries"** and a matching paragraph in the SKILL.md "Trigger
+  Conditions" section: **"Never bypass the skill when the user
+  explicitly invoked it."** When the user writes `/VORTEX-OS`, "use
+  vortex-os", or any other explicit invocation, the LLM MUST
+  dispatch through the engine. The only acceptable bypass is an
+  explicit "skip the orchestration layer" or "do it directly"
+  phrase from the user. Closes the "agent decided to bypass" gap
+  that caused the media-tutorial-video miss in the prior session.
+- **SKILL.md "Trigger Conditions" section** now includes the
+  "multi-step media production" bullet between the existing
+  "multi-domain work" and "hierarchical task decomposition" bullets,
+  so the LLM scanning the trigger list sees "video" as a
+  first-class use case.
+
+### No engine change
+- Engine v0.3.0 is still the minimum version; v0.3.4 is skill-side
+  only. The `media-stack` manifest + `media-tutorial-video` template
+  are read by the existing `--dispatch-template` + plugin loader; no
+  engine wiring change was needed.
+- The engine-side follow-up (a built-in `--recipe media-tutorial-video`
+  shortcut baked into the engine) is the next enhancement if you want
+  a one-line dispatch without writing the template path. Tracked for
+  engine v0.3.5 if requested.
+
 ## [0.3.3] - 2026-08-28
 
 ### Changed

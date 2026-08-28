@@ -1,0 +1,80 @@
+{
+  "name": "media-stack",
+  "version": "0.1.0",
+  "author": "VORTEX-OS",
+  "license": "MIT",
+  "description": "Tier 3 worker that bundles the 7 shipped media plugins (image, voice, music, video, ffmpeg) into one dispatchable roster. Use it for any multi-deliverable media production: tutorial videos, ad cuts, narrated slide decks, social clips, podcast covers, etc. The engine dispatches to individual plugins based on the master objective; this manifest is the named roster the LLM (or operator) references instead of writing one plugin per call.",
+  "kind": "dynamic",
+  "tier": 3,
+  "inherits_from": ["supervisor.shift"],
+  "capabilities": [
+    "storyboard_from_source",
+    "image_cover_generation",
+    "image_portrait_generation",
+    "voice_narration",
+    "music_loop_generation",
+    "video_clip_generation",
+    "video_motion_graphics",
+    "media_assembly_ffmpeg",
+    "media_qa_continuity"
+  ],
+  "invariants_compliant": ["I1", "I3", "I4", "I5", "I6"],
+  "plugin_roster": [
+    {
+      "plugin": "image-cover",
+      "purpose": "Hero / cover art for the deliverable (one per project; sometimes one per slide). Wraps minimax-image.",
+      "when_to_dispatch": "Once at the start (cover); once per slide for slide-deck style projects."
+    },
+    {
+      "plugin": "image-portrait",
+      "purpose": "Character / subject portraits. Wraps minimax-image.",
+      "when_to_dispatch": "When the source names a character, speaker, or subject that needs a visual identity."
+    },
+    {
+      "plugin": "audio-voice",
+      "purpose": "Text-to-speech narration per slide or per scene. Wraps minimax-tts.",
+      "when_to_dispatch": "Once per slide / scene when the source has spoken copy."
+    },
+    {
+      "plugin": "audio-music",
+      "purpose": "Background music loops (BGM). Wraps minimax-music.",
+      "when_to_dispatch": "Once for the full project (a single BGM that loops under the narration), or once per chapter if the project has multiple moods."
+    },
+    {
+      "plugin": "video-hailuo",
+      "purpose": "Cinematic B-roll video clips. Wraps minimax-hailuo-2.3.",
+      "when_to_dispatch": "When a slide or scene needs motion video, not just a still image."
+    },
+    {
+      "plugin": "video-animator",
+      "purpose": "Motion graphics, kinetic typography, logo reveals, infographic animation. Wraps minimax-h3.",
+      "when_to_dispatch": "When a slide needs animated text or data viz rather than a filmed clip."
+    },
+    {
+      "plugin": "media-ffmpeg",
+      "purpose": "Local ffmpeg for the final assembly step: trim, concatenate voiceover + BGM, mux into the final MP4. No LLM; just calls ffmpeg on the host.",
+      "when_to_dispatch": "Once at the end, as the packager step that produces the final deliverable."
+    }
+  ],
+  "continuity_rules_default": [
+    "All heroes use the same cover style (one of: cinematic | minimalist | vintage | modern | abstract) so the project is visually coherent.",
+    "All voiceover uses the same voice (one of: default | male-1 | female-1 | child) so the project sounds like one narrator.",
+    "All BGM uses the same musical genre / mood; crossfade between chapters is allowed but per-slide genre switching is not.",
+    "Aspect ratio is fixed per project (16:9 for desktop, 9:16 for short-form, 1:1 for social) -- no per-slide aspect switching.",
+    "Color grading is consistent across heroes: the LLM should pass the same color-palette hint in every image prompt (e.g. 'cool teal and warm amber, low contrast')."
+  ],
+  "self_heal_targets": [
+    "Tone drift (voiceover shifts formality between scenes)",
+    "Style drift (hero images drift in art style between slides)",
+    "Pacing mismatch (voiceover duration doesn't match the slide's visual hold time)",
+    "Audio level mismatch (voiceover too quiet vs BGM, or vice versa)",
+    "Color drift (hero images don't share the same palette)"
+  ],
+  "default_hitl_gates": [
+    { "gate": 1, "severity": "HIGH",   "fires_after": "storyboard + voiceover script drafted", "ask": "Approve the storyboard + voiceover script for media generation?" },
+    { "gate": 2, "severity": "CRITICAL", "fires_after": "all hero images + voiceover + BGM generated", "ask": "Approve the visual + audio assembly for final cut?" },
+    { "gate": 3, "severity": "HIGH",   "fires_after": "final MP4 / assembled media complete", "ask": "Approve the final pack for delivery to deliverables/<project>/?" }
+  ],
+  "reads": ["project_docs/master_objectives.md", "swarms/active_*/plan.json"],
+  "writes": ["swarms/active_*/deliverables/", "deliverables/<project>/"]
+}

@@ -348,6 +348,7 @@ The LLM operating VORTEX-OS **must never**:
 5. **Never delete `memory/audit.jsonl`** — it is the system's black-box flight recorder. Append-only forever.
 6. **Never run `--dispatch-master` and `--hitl-approve` in the same turn** — the HITL halt must be visible to the user, period.
 7. **Never trust worker output without checking the audit log** — if a worker claims success, verify it via `memory/audit.jsonl` before reporting to the user.
+8. **Never bypass the skill when the user explicitly invoked it.** When the user writes `/VORTEX-OS`, "use vortex-os", "via the skill", or any other explicit invocation, you MUST dispatch through the engine (`--dispatch-master` or `--dispatch-template`). Hand-rolled direct tool calls are a violation of the skill contract in that case. The only acceptable bypass is an explicit "skip the orchestration layer" or "do it directly" phrase from the user. If you believe the skill is the wrong tool for the job, surface that to the user and ask — do not silently fall through to direct tool calls.
 
 ---
 

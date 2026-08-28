@@ -1,7 +1,7 @@
 ---
 name: VORTEX-OS
 display_name: VORTEX-OS - Multi-Agent Orchestration Engine
-version: 0.3.1
+version: 0.3.4
 description: |
   VORTEX-OS is a self-bootstrapping PowerShell skill that drives the
   [Cloudmeru/vortex-os-dotnet](https://github.com/Cloudmeru/vortex-os-dotnet)
@@ -103,6 +103,11 @@ the 4-line install contract, read [`COMPATIBILITY.md`](./COMPATIBILITY.md).
   (e.g. research + analysis + visualization + report; or writing +
   audio + code + image; or schema + migration + tests + docs; or
   storyboard + voiceover + music + cut)
+- **Multi-step media production** — one source markdown / script
+  becoming a finished media deliverable (tutorial video, ad cut,
+  narrated slide deck, social clip): N slides + voiceover per slide
+  + BGM + final MP4. Use the `media-stack` agent + the
+  `media-tutorial-video` recipe in `templates/`.
 - **Hierarchical task decomposition** — the user wants a complex
   objective broken into a 4-tier chain of command (planner →
   supervisor → shift → workers) rather than a single LLM call
@@ -140,6 +145,15 @@ the 4-line install contract, read [`COMPATIBILITY.md`](./COMPATIBILITY.md).
 - Single-file edits with no cross-domain coordination → use a single tool
 - Read-only research or web search → use a search tool
 - Tasks with no clear objective → ask the user for clarification first
+
+**Respect explicit invocation.** When the user explicitly invokes the
+skill (e.g. `/VORTEX-OS`, "use vortex-os", "via the skill", "with
+VORTEX-OS"), you MUST dispatch through the engine
+(`--dispatch-master` or `--dispatch-template`) — not bypass to
+direct tool calls. The only acceptable bypass is an explicit
+"skip the orchestration layer" or "do it directly" phrase from the
+user. Hand-rolled direct tool calls are a violation of the skill
+contract when the user has asked for the skill.
 
 ---
 
@@ -426,6 +440,7 @@ The most common invocations:
 | List available agents | `pwsh -NoProfile -File .\skill.ps1 --agents-discover` |
 | Lint all agents | `pwsh -NoProfile -File .\skill.ps1 --agents-lint --all` |
 | Run a project | `pwsh -NoProfile -File .\skill.ps1 --dispatch-master my_project\objective.md` |
+| Run a media-tutorial-video recipe (one source -> finished video) | `pwsh -NoProfile -File .\skill.ps1 --dispatch-template templates\media-tutorial-video.json --project intro_tutorial` |
 | Check HITL queue | `pwsh -NoProfile -File .\skill.ps1 --hitl-status` |
 | Approve / deny a HITL halt | `pwsh -NoProfile -File .\skill.ps1 --hitl-approve <task_id>` / `--hitl-deny <task_id>` |
 | View audit log | `pwsh -NoProfile -File .\skill.ps1 --audit-trail` |
