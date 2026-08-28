@@ -4,6 +4,23 @@ All notable changes to the VORTEX-OS skill package are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.3.9] - 2026-08-28
+
+### Fixed
+- **`install.ps1` line 96 referenced `$vortexHome` before it was assigned.**
+  When the user invoked `install.ps1` directly without first running
+  `skill.ps1` (which sets `$env:VORTEX_HOME`), the script errored
+  with "Cannot bind argument to parameter 'Path' because it is null"
+  on the auto-update cache path. Fixed: `install.ps1` now sets
+  `$env:VORTEX_HOME` to `$env:APPDATA\Vortex-OS` if the env var
+  isn't already set, so direct invocation works.
+
+### No new features
+- Dependency-pinning release. The skill v0.3.8 functionality is
+  unchanged. The new behavior is in engine v0.3.6 (version string
+  + --recipe --source UX fixes; see
+  [vortex-os-dotnet v0.3.6](https://github.com/Cloudmeru/vortex-os-dotnet/releases/tag/v0.3.6)).
+
 ## [0.3.8] - 2026-08-28
 
 ### Changed

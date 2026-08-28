@@ -46,6 +46,14 @@ $RepoName  = 'vortex-os-dotnet'
 $Engine    = 'Vortex'        # PowerShell module name (matches Vortex.psd1)
 $AssetNames = @('Vortex.dll', 'Vortex.psm1', 'Vortex.psd1', 'ijwhost.dll')
 
+# v0.3.9: VORTEX_HOME was referenced on line 96 (the auto-update cache
+# path) before it was assigned. Set a default here so install.ps1
+# works when the user invokes it directly without skill.ps1 setting
+# $env:VORTEX_HOME first.
+if (-not $env:VORTEX_HOME) {
+    $env:VORTEX_HOME = Join-Path $env:APPDATA 'Vortex-OS'
+}
+
 if (-not $ModulePath) {
     # Pick the first PSModulePath directory we can actually write to. We
     # probe by creating a sentinel sub-folder; if the path is a OneDrive
