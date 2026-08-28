@@ -4,6 +4,62 @@ All notable changes to the VORTEX-OS skill package are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.2.3] - 2026-08-28
+
+### Added
+- **`install-powershell7.ps1`** (~7 KB) — bootstrap PowerShell 7+ from a
+  Windows PowerShell 5.1 prompt. Downloads the official Microsoft PS7
+  MSI to a temp folder and runs it with `/quiet /norestart`. Per-user
+  install (no UAC, no reboot) on Windows 10 1809+ and Server 2019+.
+  Required for G9 — a fresh Windows install with only PS5.1 can now
+  self-bootstrap.
+- **`lib/vector_schema.sql`** (~2.5 KB) — the SQLite schema for the
+  vector store (3 tables: `vector_embeddings`, `vector_meta`,
+  `vector_index_meta`). Was referenced by `Commands::VectorHydrate`
+  but never shipped; the hydrate step used to silently no-op. Now
+  the engine actually creates the DB on a clean install.
+- **`install_fallbacks` field in `_meta.json`** — the choco / scoop /
+  direct-URL alternatives for each dep, so a locked-down corporate
+  machine with no winget has a documented install path.
+- **11 new PowerShell cmdlets** in `Vortex.psm1` (G11):
+  `Get-VortexDecision`, `Send-VortexDecision`, `Get-VortexCostReport`,
+  `Get-VortexProjectBudget`, `Set-VortexProjectBudget`,
+  `Get-VortexAgentGraph`, `Test-VortexAgent`, `Start-VortexPackage`,
+  `Get-VortexStream`, `Send-VortexStreamHint`, `Get-VortexTeamConfig`,
+  `Invoke-VortexVectorHydrate`. Plus the existing `Get-VortexVersion`
+  from G5.
+- **`Get-VortexVersion` cmdlet** — reads `ModuleVersion` from
+  `Vortex.psd1` so callers don't have to shell out to
+  `skill.ps1 --version`.
+
+### Changed
+- **`auto-update.ps1` + `install.ps1` cache read** (G8): at the start
+  of the install flow, both scripts read `state/auto-update-check.json`
+  and skip the GitHub call if the cache is < 6h old. The cache also
+  persists the asset URLs so even the asset lookup is short-circuited.
+  A fresh install + re-install within 6h no longer re-resolves the
+  release from GitHub.
+- **`install-deps.ps1` package manager priority** (G10): if winget is
+  not on PATH, the script walks `winget > choco > scoop > direct` in
+  order and uses the first one available. The `install_fallbacks`
+  field in `_meta.json` documents the choco / scoop / direct-URL
+  alternatives for each dep.
+- **Better PS5.1 error message** in `Vortex.psm1` (G9): the throw on
+  `PowerShellVersion` < 7 now points the operator at
+  `install-powershell7.ps1` so a fresh Windows install knows how to
+  bootstrap itself.
+- **Skill `.gitignore` tightened** (G6): added `Vortex.dll`,
+  `Vortex.psm1`, `Vortex.psd1`, `ijwhost.dll` to the ignore list so a
+  contributor who accidentally runs `src/build.ps1` from inside the
+  skill folder doesn't pollute the repo. Also added `*.tmp`, `*.bak`,
+  `*.orig`, `ehthumbs.db`, `ehthumbs_vista.db`.
+
+### Engine dependency
+- Requires [vortex-os-dotnet v0.2.3](https://github.com/Cloudmeru/vortex-os-dotnet/releases/tag/v0.2.3)
+  which adds the `Get-VortexVersion` cmdlet, the `--vector-hydrate`
+  command, the `worker.packager` audit lines, the FileLock-based
+  Inspector write, and the `RunChecks` refactor (G7).
+
 ## [0.2.2] - 2026-08-27
 
 ### Added

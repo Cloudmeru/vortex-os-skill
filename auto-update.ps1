@@ -174,10 +174,23 @@ if ($needsUpdate -and -not $DryRun) {
 }
 
 # --- 8. Write back the cache -------------------------------------------------
+# v0.2.3 (G8): also persist the asset URLs so install.ps1 can short-circuit
+# even the asset lookup (not just the version check) within the rate-limit
+# window. The full asset list is small (~4 entries) and stable per release.
+$cacheAssets = @()
+if ($release -and $release.assets) {
+    foreach ($a in $release.assets) {
+        $cacheAssets += [PSCustomObject]@{
+            name = $a.name
+            browser_download_url = $a.browser_download_url
+        }
+    }
+}
 $cacheObj = @{
     last_check    = (Get-Date).ToString('o')
     remote_tag    = $remoteTag
     installed_ver = $installedVer
     updated       = ($needsUpdate -and -not $DryRun)
+    assets        = $cacheAssets
 }
 $cacheObj | ConvertTo-Json | Set-Content -Path $cacheFile -Encoding UTF8

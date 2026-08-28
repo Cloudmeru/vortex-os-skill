@@ -115,11 +115,29 @@ Write-Host ""
 
 # --- 5. winget sanity check --------------------------------------------------
 $winget = Get-Command 'winget' -ErrorAction SilentlyContinue
-if (-not $winget) {
-    Write-Host "[vortex-os] winget is not on PATH. Install 'App Installer' from the Microsoft Store, then re-run." -ForegroundColor Red
-    if ($Install) { throw "winget not found" }
+$choco  = Get-Command 'choco'  -ErrorAction SilentlyContinue
+$scoop  = Get-Command 'scoop'  -ErrorAction SilentlyContinue
+
+# v0.2.3 (G10): pick the first available installer in priority order.
+# winget > choco > scoop > direct (download + unzip). The direct fallback
+# is for locked-down corporate machines that have no package manager
+# available.
+function Get-PackageManager {
+    if ($winget) { return @{ Name = 'winget'; Command = $winget.Source } }
+    if ($choco)  { return @{ Name = 'choco';  Command = $choco.Source  } }
+    if ($scoop)  { return @{ Name = 'scoop';  Command = $scoop.Source  } }
+    return $null
+}
+$pkgMgr = Get-PackageManager
+if (-not $pkgMgr) {
+    Write-Host "[vortex-os] No package manager found (winget / choco / scoop)." -ForegroundColor Red
+    Write-Host "[vortex-os] For sqlite3, you can download a static build from https://www.sqlite.org/download.html" -ForegroundColor Yellow
+    Write-Host "[vortex-os] For ffmpeg,  you can download a static build from https://www.gyan.dev/ffmpeg/builds/" -ForegroundColor Yellow
+    Write-Host "[vortex-os] After manual install, re-run install-deps.ps1 to confirm PATH." -ForegroundColor Yellow
+    if ($Install) { throw "no package manager found" }
     return
 }
+Write-Host "[vortex-os] Using package manager: $($pkgMgr.Name) ($($pkgMgr.Command))" -ForegroundColor Cyan
 
 # --- 6. Install (with confirmation) -----------------------------------------
 $toInstall = @()
@@ -133,23 +151,46 @@ if ($Install) {
     }
 
     if (-not $Force) {
-        Write-Host "About to install $($toInstall.Count) package(s) via winget:" -ForegroundColor Yellow
-        foreach ($d in $toInstall) { Write-Host "  - $($d.name)  ($($d.winget_id))" }
+        Write-Host "About to install $($toInstall.Count) package(s) via $($pkgMgr.Name):" -ForegroundColor Yellow
+        foreach ($d in $toInstall) { Write-Host "  - $($d.name)" }
         $answer = Read-Host "Proceed? (y/N)"
         if ($answer -ne 'y') { Write-Host "[vortex-os] Aborted by user." -ForegroundColor Yellow; return }
     }
 
     foreach ($d in $toInstall) {
-        Write-Host "[vortex-os] Installing $($d.name) via winget ($($d.winget_id))..." -ForegroundColor Cyan
-        & winget install --id $d.winget_id --accept-package-agreements --accept-source-agreements
-        if ($LASTEXITCODE -ne 0) {
-            Write-Host "[vortex-os] winget install for $($d.winget_id) exited with $LASTEXITCODE" -ForegroundColor Red
-        } else {
-            Write-Host "[vortex-os] Installed $($d.name)." -ForegroundColor Green
+        if ($pkgMgr.Name -eq 'winget') {
+            Write-Host "[vortex-os] Installing $($d.name) via winget ($($d.winget_id))..." -ForegroundColor Cyan
+            & winget install --id $d.winget_id --accept-package-agreements --accept-source-agreements
+            if ($LASTEXITCODE -ne 0) {
+                Write-Host "[vortex-os] winget install for $($d.winget_id) exited with $LASTEXITCODE" -ForegroundColor Red
+            } else {
+                Write-Host "[vortex-os] Installed $($d.name)." -ForegroundColor Green
+            }
+        } elseif ($pkgMgr.Name -eq 'choco') {
+            $chocoId = if ($d.name -eq 'sqlite3') { 'sqlite' } else { 'ffmpeg' }
+            Write-Host "[vortex-os] Installing $($d.name) via choco ($chocoId)..." -ForegroundColor Cyan
+            & choco install $chocoId -y
+            if ($LASTEXITCODE -ne 0) {
+                Write-Host "[vortex-os] choco install for $chocoId exited with $LASTEXITCODE" -ForegroundColor Red
+            } else {
+                Write-Host "[vortex-os] Installed $($d.name)." -ForegroundColor Green
+            }
+        } elseif ($pkgMgr.Name -eq 'scoop') {
+            $scoopName = if ($d.name -eq 'sqlite3') { 'sqlite' } else { 'ffmpeg' }
+            Write-Host "[vortex-os] Installing $($d.name) via scoop ($scoopName)..." -ForegroundColor Cyan
+            & scoop install $scoopName
+            if ($LASTEXITCODE -ne 0) {
+                Write-Host "[vortex-os] scoop install for $scoopName exited with $LASTEXITCODE" -ForegroundColor Red
+            } else {
+                Write-Host "[vortex-os] Installed $($d.name)." -ForegroundColor Green
+            }
         }
     }
     Write-Host ""
     Write-Host "[vortex-os] Done. Re-run install-deps.ps1 to confirm all deps are on PATH." -ForegroundColor Green
 } else {
-    Write-Host "[vortex-os] Dry-run. Pass -Install to actually run winget install." -ForegroundColor Cyan
+    Write-Host "[vortex-os] Dry-run. Pass -Install to actually run $($pkgMgr.Name) install." -ForegroundColor Cyan
+    if (-not $winget) {
+        Write-Host "[vortex-os] (winget not found; would have used $($pkgMgr.Name) instead. See install_fallbacks in _meta.json for choco/scoop/direct URLs.)" -ForegroundColor DarkGray
+    }
 }

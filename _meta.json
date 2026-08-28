@@ -144,7 +144,20 @@
         "description": "Audio/video processor. Not used by the engine itself, but required by generated *audio deliverables* (Foley, sample chopping, DSP). Install only if you plan to generate audio deliverables."
       }
     ],
-    "winget_install_note": "The engine is pure .NET 10 / C++/CLI. It does NOT need Python, jq, or any scripting runtime. All system deps install via Windows Package Manager (winget) — never pip/brew/apt. Use the bundled install-deps.ps1 to install."
+    "install_fallbacks": {
+      "description": "v0.2.3 (G10): if winget is not installed (older Windows, locked-down corporate machines, missing App Installer), install-deps.ps1 walks this list in order and uses the first one that exists. The 'direct' entry is a static URL the operator can paste into a browser; the script will also offer to download + unzip it.",
+      "sqlite3": [
+        { "method": "choco", "command": "choco install sqlite --version=3.50.0 -y" },
+        { "method": "scoop", "command": "scoop install sqlite" },
+        { "method": "direct", "url": "https://www.sqlite.org/2025/sqlite-tools-win-x64-3500400.zip", "unzip_to": "%LOCALAPPDATA%\\Microsoft\\WindowsApps\\sqlite3" }
+      ],
+      "ffmpeg": [
+        { "method": "choco", "command": "choco install ffmpeg -y" },
+        { "method": "scoop", "command": "scoop install ffmpeg" },
+        { "method": "direct", "url": "https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip", "unzip_to": "%LOCALAPPDATA%\\Microsoft\\WindowsApps\\ffmpeg" }
+      ]
+    },
+    "winget_install_note": "The engine is pure .NET 10 / C++/CLI. It does NOT need Python, jq, or any scripting runtime. All system deps install via Windows Package Manager (winget) — never pip/brew/apt. Use the bundled install-deps.ps1 to install. If winget is unavailable, the script falls back to choco, scoop, or a direct download (see install_fallbacks)."
   },
   "data_location": {
     "description": "Starting with engine v0.1.7 + skill v0.1.4, the engine splits storage into a mutable skill folder and a durable VORTEX_HOME. The user's deliverables, audit log, swarms, and HITL state live in VORTEX_HOME so they survive skill updates and are shared across multiple skill instances on the same machine.",

@@ -86,15 +86,65 @@ if (-not $ModulePath) {
 
 # ---- 3. Pick the release ----------------------------------------------------
 $apiBase = "https://api.github.com/repos/$RepoOwner/$RepoName/releases"
+
+# v0.2.3 (G8): if the auto-update cache is fresh, reuse the resolved tag
+# instead of hitting GitHub again. install.ps1 used to always call
+# /releases/latest, so a fresh install + install.ps1 + install.ps1 within
+# 6h would re-resolve 3 times. We now read the cache; if last_check is
+# within IntervalHours (default 6) and the cached remote_tag matches the
+# version we want, we skip the GitHub call. Pass -Force to bypass.
+$cacheFile = Join-Path $vortexHome 'state\auto-update-check.json'
+$cache = $null
+if (Test-Path $cacheFile) {
+    try { $cache = Get-Content $cacheFile -Raw | ConvertFrom-Json } catch { }
+}
+$cacheFresh = $false
+if ($cache -and $cache.last_check) {
+    try {
+        $lastCheck = [datetime]::Parse($cache.last_check, [Globalization.CultureInfo]::InvariantCulture, [Globalization.DateTimeStyles]::RoundtripKind)
+        $age = (Get-Date) - $lastCheck
+        if ($age.TotalHours -lt 6) { $cacheFresh = $true }
+    } catch { }
+}
+
 if (-not $Version -or $Version -ieq 'latest') {
-    Write-Host "[vortex-os] Resolving latest release of $RepoOwner/$RepoName ..." -ForegroundColor Cyan
-    $release = Invoke-RestMethod -Uri "$apiBase/latest" -Headers @{ 'Accept' = 'application/vnd.github+json' }
-    $Version = $release.tag_name
+    if ($cacheFresh -and $cache.remote_tag) {
+        Write-Host "[vortex-os] Using cached latest release: $($cache.remote_tag) (< 6h old)" -ForegroundColor DarkGray
+        $Version = $cache.remote_tag
+        # We still need the release metadata (assets) below. If the cache
+        # doesn't carry asset URLs, fall back to GitHub.
+        if ($cache.assets) {
+            $release = [PSCustomObject]@{
+                tag_name = $cache.remote_tag
+                assets   = $cache.assets
+            }
+        } else {
+            $cacheFresh = $false  # force re-fetch
+        }
+    }
+    if (-not $cacheFresh) {
+        Write-Host "[vortex-os] Resolving latest release of $RepoOwner/$RepoName ..." -ForegroundColor Cyan
+        $release = Invoke-RestMethod -Uri "$apiBase/latest" -Headers @{ 'Accept' = 'application/vnd.github+json' }
+        $Version = $release.tag_name
+    }
 } else {
     # Strip a leading 'v' so the user can pass either '0.1.0' or 'v0.1.0'
     if ($Version -like 'v*') { $Version = $Version.Substring(1) }
-    Write-Host "[vortex-os] Resolving release tag v$Version of $RepoOwner/$RepoName ..." -ForegroundColor Cyan
-    $release = Invoke-RestMethod -Uri "$apiBase/tags/v$Version" -Headers @{ 'Accept' = 'application/vnd.github+json' }
+    if ($cacheFresh -and $cache.remote_tag -and ($cache.remote_tag.TrimStart('v') -eq $Version)) {
+        Write-Host "[vortex-os] Using cached release tag v$Version (< 6h old)" -ForegroundColor DarkGray
+        if ($cache.assets) {
+            $release = [PSCustomObject]@{
+                tag_name = $cache.remote_tag
+                assets   = $cache.assets
+            }
+        } else {
+            $cacheFresh = $false
+        }
+    }
+    if (-not $cacheFresh) {
+        Write-Host "[vortex-os] Resolving release tag v$Version of $RepoOwner/$RepoName ..." -ForegroundColor Cyan
+        $release = Invoke-RestMethod -Uri "$apiBase/tags/v$Version" -Headers @{ 'Accept' = 'application/vnd.github+json' }
+    }
 }
 
 $versionDir = $Version.TrimStart('v')
@@ -164,3 +214,29 @@ Write-Host "Test it:" -ForegroundColor Cyan
 Write-Host "  Import-Module $Engine; Get-VortexAgent"
 Write-Host "  pwsh -NoProfile -File .\verify.ps1"
 Write-Host "  pwsh -NoProfile -File .\skill.ps1 --agents-discover"
+
+# ---- 6. Refresh the auto-update cache ---------------------------------------
+# v0.2.3 (G8): write the cache so the next install.ps1 / auto-update.ps1
+# call can skip the GitHub call within the rate-limit window.
+try {
+    Ensure-Dir (Split-Path $cacheFile -Parent)
+    $cacheAssets = @()
+    if ($release -and $release.assets) {
+        foreach ($a in $release.assets) {
+            $cacheAssets += [PSCustomObject]@{
+                name = $a.name
+                browser_download_url = $a.browser_download_url
+            }
+        }
+    }
+    $cacheObj = @{
+        last_check    = (Get-Date).ToString('o')
+        remote_tag    = "v$Version"
+        installed_ver = $Version
+        updated       = $true
+        assets        = $cacheAssets
+    }
+    $cacheObj | ConvertTo-Json | Set-Content -Path $cacheFile -Encoding UTF8
+} catch {
+    Write-Verbose "Failed to refresh auto-update cache: $($_.Exception.Message)"
+}

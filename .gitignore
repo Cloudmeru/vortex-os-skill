@@ -12,6 +12,31 @@ bin/
 out/
 dist/build/
 
+# .NET / C++/CLI intermediate
+*.nupkg
+*.cache
+*.tmp
+*.tmp_proj
+*.swp
+*.bak
+*.orig
+*.user
+
+# Source build output (in case someone runs src/build.ps1 from inside the skill)
+# The skill itself doesn't compile the engine — install.ps1 downloads a
+# prebuilt Vortex.dll. But if a contributor runs src\build.ps1 in this
+# folder, the artifacts would otherwise land next to the runtime state.
+# Defensive: the canonical build is run from the .NET source repo
+# (Cloudmeru/vortex-os-dotnet), never from inside the skill.
+Vortex.dll
+Vortex.psm1
+Vortex.psd1
+ijwhost.dll
+*.aps
+*.pch
+*.vspscc
+*.vssscc
+
 # IDE
 .vs/
 .vscode/
@@ -25,6 +50,8 @@ dist/build/
 Thumbs.db
 .DS_Store
 desktop.ini
+ehthumbs.db
+ehthumbs_vista.db
 
 # PowerShell
 *.ps1xml~
@@ -36,6 +63,9 @@ swarms/
 tasks/
 deliverables/
 templates/
+
+# Vortex-OS audit/check cache files (would be regenerated on every run)
+state/auto-update-check.json
 
 walkthrough/slides/imgs/_gen_*.json
 
