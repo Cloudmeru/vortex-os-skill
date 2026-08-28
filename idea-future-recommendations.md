@@ -296,7 +296,7 @@ Currently, each project lives in its own `deliverables/<project>/` subfolder and
 
 **Effort:** ~1 quarter. Genuinely hard problem.
 
-**PRD:** [`docs/prd-phase3/prd-17-cross-project-memory-lore.md`](docs/prd-phase3/prd-17-cross-project-memory-lore.md) (added 2026-08-28). Builds on phase 2 (audit + cost + per-project meta). Reads existing data sources, writes `memory/lore/{project,series,calibration}.json`. New CLI: `--compile-lore`. New cmdlet: `Get-VortexLore`. New dispatch flag: `--with-lore`.
+**PRD:** [`docs/prd-phase3/prd-17-cross-project-memory.md`](docs/prd-phase3/prd-17-cross-project-memory.md) (added 2026-08-28, revised same day to **universal framing** — the original wording was narrative-only; the revision covers all project types: code, video, audio, image, research, design, narrative). Builds on phase 2 (audit + cost + per-project meta). Reads existing data sources, writes `memory/derived/{project,series,operator}.json`. New CLI: `--compile-memory`. New cmdlet: `Get-VortexMemory`. New dispatch flag: `--with-memory`.
 
 ---
 
