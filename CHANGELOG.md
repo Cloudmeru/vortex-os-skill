@@ -4,6 +4,35 @@ All notable changes to the VORTEX-OS skill package are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.3.2] - 2026-08-28
+
+### Removed
+- **`docs/`** (9 files: 7 phase-2 PRDs, README, PRD-17). Engineering
+  design material that was shipped in the working tree for traceability.
+  Moved to the platform wiki; the v0.3.2 release artifact no longer
+  contains it. All prior commits still reference these files in git
+  history (`git log --all -- 'docs/prd-phase2/*'` etc. works as before).
+- **`idea-architecture-decisions.md`**, **`idea-faq-and-pitfalls.md`**,
+  **`idea-future-recommendations.md`** — the design notebook (15 ADRs,
+  30+ Q&As, 18 future-recommendation items). Same wiki migration. The
+  v0.3.1 verification_status summary of the major v0.1.x–v0.3.0
+  decisions stays in `_meta.json` so the platform metadata block still
+  carries the long-form audit trail.
+
+### Changed
+- **`.gitignore`** now excludes `docs/` and `idea-*.md`. The shipped
+  `templates/*.json` exception (added in v0.3.1) is preserved.
+- **`SKILL.md` anatomy table** — the three `idea-*.md` rows are replaced
+  with a `CHANGELOG.md` pointer so the LLM knows where to find the
+  per-version history.
+- **`_meta.json` `files` block** — `future_recommendations`,
+  `architecture_decisions`, `faq_and_pitfalls` are set to `null` to
+  signal "moved to wiki, see CHANGELOG for the per-version record".
+
+### Engine dependency
+- No engine change. v0.3.2 is skill-side cleanup only; v0.3.0 is still
+  the minimum engine version. Safe to install over v0.3.1.
+
 ## [0.3.1] - 2026-08-28
 
 ### Changed

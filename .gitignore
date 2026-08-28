@@ -69,6 +69,14 @@ templates/*
 !templates/*.json
 !templates/*.schema.json
 
+# Engineering reference material (not user-facing):
+#   docs/         -- the PRD documents for each phase
+#   idea-*.md     -- the design notebook (ADRs, FAQs, future-recommendations)
+# These stay in git history for traceability but are no longer shipped
+# in the working tree (they were moved to the platform wiki in v0.3.2).
+docs/
+idea-*.md
+
 # Vortex-OS audit/check cache files (would be regenerated on every run)
 state/auto-update-check.json
 

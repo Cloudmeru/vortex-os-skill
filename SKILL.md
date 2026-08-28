@@ -193,9 +193,7 @@ This skill folder is laid out as follows. Read only what you need.
 | `CHANGELOG.md` | Per-version changes | When the user asks "what changed in v0.3.0?" |
 | `_meta.json` | **Platform metadata** (skill_id, version, capabilities, install flow) | When the platform introspects the skill for registration / discovery |
 | `walkthrough/` | **Visual HTML walkthrough** — 11 slides, auto-advancing viewer, MP4 recording recipe (PowerShell + Edge + ffmpeg). Open `walkthrough/index.html` in a browser | When you want a 5-minute visual tour of the skill before reading |
-| `idea-future-recommendations.md` | 18 prioritized next-version items + 12 known gaps + 5 open questions | When planning v0.3.1+ roadmap |
-| `idea-architecture-decisions.md` | 15 Architecture Decision Records (engine choice, two-root storage, user-scope install, self-bootstrapping, etc.) | When you need to know *why* a design decision was made |
-| `idea-faq-and-pitfalls.md` | 30+ Q&As across 10 categories (install, storage, HITL, self-heal, manifest, audio, etc.) | When something is broken and you need a fast answer |
+| `CHANGELOG.md` (this file) | **Per-version changes** — what was added, what was reworded, what was removed | When you ask "what changed in v0.3.0?" or "what's the engine version for this skill release?" |
 | `skill.ps1` | **The one-shot CLI entry point.** Self-bootstrapping: auto-installs the engine on first run. This is the primary command for any code agent | Always invoke this to dispatch a command |
 | `install.ps1` | **The engine installer** (downloads from the GitHub release). Run `skill.ps1 -Install` or this directly | When the user wants to pin a specific engine version or pre-stage the install |
 | `install-deps.ps1` | **System-dependency installer** (uses `winget` to install `sqlite3` and optionally `ffmpeg`). Reads the dep list from `_meta.json.winget_install_ids` | Run on a fresh machine before the first dispatch, if `verify.ps1` reports missing tools |
