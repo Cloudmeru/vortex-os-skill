@@ -1,0 +1,24 @@
+{
+  "name": "qa.media-tutorial-video",
+  "version": "0.1.0",
+  "author": "VORTEX-OS",
+  "license": "MIT",
+  "description": "Specialist #1 for the media-tutorial-video template. Calls qa.core for the basic checks, then runs template-specific vision-LLM checks: (a) per-slide narrative coherence (does each hero image match the script content for that slide?), (b) per-slide voiceover duration matches the slide hold time (+/- 10%), (c) brand palette consistency across all heroes (sampled). Returns the standard verdict shape so reviewer.quality can aggregate it. Falls back to 'skip' verdicts for each vision check if mcode-tools is unavailable -- the file-integrity checks still run.",
+  "capability": "qa",
+  "inputs": {
+    "files":         { "type": "string", "required": true, "description": "Same shape as qa.core: JSON object mapping slide-NN keys to file paths." },
+    "script":        { "type": "string", "required": false, "description": "Path to the source markdown / script. Used to cross-check each slide's content against its hero image (vision LLM)." },
+    "palette":       { "type": "string", "required": false, "description": "Expected brand palette (free-text). Used for the cross-slide consistency check." }
+  },
+  "outputs": {
+    "score":    { "type": "number", "description": "Aggregate score from 0 to 1" },
+    "findings": { "type": "string", "description": "JSON array of finding objects" },
+    "decision": { "type": "string", "description": "auto-approve | retry | hitl-halt" },
+    "provider": { "type": "string", "description": "mcode-tools (when vision is online) | local-fallback (when offline, vision checks skipped)" }
+  },
+  "command": {
+    "type": "powershell",
+    "entry": "invoke.ps1",
+    "timeout_s": 300
+  }
+}

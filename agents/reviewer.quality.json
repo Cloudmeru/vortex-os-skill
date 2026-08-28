@@ -1,0 +1,44 @@
+{
+  "name": "reviewer.quality",
+  "version": "0.1.0",
+  "author": "VORTEX-OS",
+  "license": "MIT",
+  "description": "Tier 2 quality reviewer. Runs AFTER each worker batch and ONCE on the final assembled package. Picks the right per-template qa.* specialist (qa.media-tutorial-video, qa.cinematic-short, qa.iteration-pattern, etc.) based on the dispatch's manifest, calls it, and aggregates the verdict into one of three decisions: auto-approve (looks good), retry (regenerate with a hint), or HITL halt (only the most suspect cases reach the user). The --qa-threshold flag (strict / normal / loose) tunes the score threshold at which the reviewer escalates to HITL. The reviewer is invoked by the agent that owns the dispatch (supervisor.store for general work, media-stack for slide-based media, director.cinematic for multi-scene media) -- it does not own the dispatch itself.",
+  "kind": "dynamic",
+  "tier": 2,
+  "inherits_from": ["inspector.governance"],
+  "plugin_roster": [
+    { "plugin": "qa.core",                "purpose": "Shared basic checks: file exists, nonzero size, image dimensions, audio duration, placeholder detection. Called by every qa.* specialist; not called directly by the reviewer.", "when_to_dispatch": "Loaded by every qa.* specialist; the specialist decides which checks to run." },
+    { "plugin": "qa.media-tutorial-video", "purpose": "Per-slide narrative coherence (vision LLM), per-slide voiceover-sync, all-slides-have-hero, all-voiceovers-non-zero. Specialist #1.", "when_to_dispatch": "When the dispatch's manifest matches templates/media-tutorial-video.json OR the dispatch came from media-stack.json." },
+    { "plugin": "qa.cinematic-short",      "purpose": "Character continuity (vision LLM vs production_bible), palette consistency (pixel histogram), voice consistency (verify voice preset matches bible), aspect consistency, transition smoothness. Specialist #2.", "when_to_dispatch": "When the dispatch's manifest matches templates/cinematic-short.json OR the dispatch came from director.cinematic.json." },
+    { "plugin": "qa.iteration-pattern",    "purpose": "Generic specialist: file integrity, no obvious placeholders, manifest compliance. Used for the iteration_pattern template + any future template that doesn't have its own specialist yet.", "when_to_dispatch": "When no template-specific specialist applies." }
+  ],
+  "decision_rules": {
+    "auto_approve":   "score >= 0.85 AND no findings with severity 'high'",
+    "retry":           "score >= 0.50 AND score < 0.85 (regenerate with the highest-severity finding's retry_hint)",
+    "hitl_halt":       "score < 0.50 OR any finding with severity 'critical'",
+    "qa_threshold_override": {
+      "strict": "auto_approve requires score >= 0.95; hitl_halt at score < 0.70",
+      "normal": "auto_approve requires score >= 0.85; hitl_halt at score < 0.50 (default)",
+      "loose":  "auto_approve requires score >= 0.70; hitl_halt at score < 0.30"
+    }
+  },
+  "continuity_rules_default": [
+    "Every QA verdict (auto-approve / retry / HITL halt) is written to memory/audit.jsonl with the rationale (the finding list)",
+    "When the verdict is 'retry', the reviewer's retry_hint is passed back to the worker that produced the failed artifact; the worker re-runs with the hint",
+    "When the verdict is 'HITL halt', the dispatch's Gate 2 (or whichever gate the reviewer is in front of) fires and surfaces to the operator",
+    "A 'HITL halt' from the reviewer counts as a 'critical' HITL gate, even if the surrounding template only has 'high' gates"
+  ],
+  "self_heal_targets": [
+    "Reviewer false-positive (the operator re-approves the same artifact the reviewer rejected -- the reviewer is too strict; tune the threshold or update the specialist's prompts)",
+    "Reviewer false-negative (the operator flags a bad output the reviewer auto-approved -- the specialist's checks are too weak; add a check or tighten the threshold)",
+    "Reviewer always-decides-retry (a check is misconfigured and never passes; the specialist's threshold is broken; operator sets --qa-threshold loose)"
+  ],
+  "default_hitl_gates": [
+    { "gate": "auto-approve-noop", "severity": "INFO", "fires_after": "reviewer returns auto-approve", "ask": "(no gate fires; dispatch continues)" },
+    { "gate": "retry-noop",       "severity": "INFO", "fires_after": "reviewer returns retry",       "ask": "(no gate fires; worker re-runs with the hint)" },
+    { "gate": "hitl-halt",        "severity": "CRITICAL", "fires_after": "reviewer returns hitl-halt",  "ask": "Reviewer flagged the output. Approve / retry with hint / deny?" }
+  ],
+  "reads": ["swarms/active_*/deliverables/", "memory/audit.jsonl"],
+  "writes": ["memory/audit.jsonl", "swarms/active_*/deliverables/.qa-verdict.json"]
+}

@@ -1,7 +1,7 @@
 ---
 name: VORTEX-OS
 display_name: VORTEX-OS - Multi-Agent Orchestration Engine
-version: 0.3.6
+version: 0.3.7
 description: |
   VORTEX-OS is a self-bootstrapping PowerShell skill that drives the
   [Cloudmeru/vortex-os-dotnet](https://github.com/Cloudmeru/vortex-os-dotnet)
@@ -145,6 +145,14 @@ the 4-line install contract, read [`COMPATIBILITY.md`](./COMPATIBILITY.md).
   local alternatives (SAPI TTS, ffmpeg tone, ffmpeg color frame,
   silent WAV, 1x1 PNG) — the audit log records which provider
   produced each asset.
+- **Quality-controlled media** — the user wants media work that
+  ships only after a reviewer checks each deliverable for
+  template-specific concerns (character continuity across scenes,
+  palette consistency, aspect-ratio consistency, narrative
+  coherence per slide, etc.). The skill auto-approves most
+  outputs, retries the few that need regeneration, and only
+  halts for human review when something is truly wrong. Tune
+  with `--qa-threshold {strict|normal|loose}`.
 - **Cross-project context reuse** — the user has run similar projects
   before and wants the new dispatch to inherit the prior operator
   (plugin) profile, deliverable-type histogram, and known gotchas

@@ -1,0 +1,23 @@
+{
+  "name": "qa.iteration-pattern",
+  "version": "0.1.0",
+  "author": "VORTEX-OS",
+  "license": "MIT",
+  "description": "Generic QA specialist for the iteration_pattern template (and any future template that doesn't have its own specialist yet). Calls qa.core for basic checks + adds template-specific checks: (a) every deliverable slot in the manifest is filled, (b) every deliverable's min_bytes is met, (c) every file has a sensible extension. No vision-LLM calls -- this is the cheap, fast specialist for the universal template.",
+  "capability": "qa",
+  "inputs": {
+    "files":    { "type": "string", "required": true, "description": "JSON object mapping deliverable slot keys to file paths." },
+    "template_path": { "type": "string", "required": false, "description": "Path to the Golden Path template (e.g. templates/iteration_pattern.json). If provided, the specialist uses its deliverables[] array to verify min_bytes and the slots are filled." }
+  },
+  "outputs": {
+    "score":    { "type": "number", "description": "Aggregate score from 0 to 1" },
+    "findings": { "type": "string", "description": "JSON array of finding objects" },
+    "decision": { "type": "string", "description": "auto-approve | retry | hitl-halt" },
+    "provider": { "type": "string", "description": "local (always; no mcode-tools call needed)" }
+  },
+  "command": {
+    "type": "powershell",
+    "entry": "invoke.ps1",
+    "timeout_s": 60
+  }
+}

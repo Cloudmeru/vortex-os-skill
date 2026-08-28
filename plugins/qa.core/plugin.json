@@ -1,0 +1,31 @@
+{
+  "name": "qa.core",
+  "version": "0.1.0",
+  "author": "VORTEX-OS",
+  "license": "MIT",
+  "description": "Shared basic QA checks. Called by every qa.* specialist (never directly by reviewer.quality). Performs: file exists, nonzero size, image dimensions within expected range (catches 1x1 placeholders, 0x0 corruption, aspect-ratio mistakes), audio duration matches expected (+/-10%), video has an audio track if one was requested, and placeholder-text-file detection (the last-ditch 'local-placeholder-text' provider writes a plain text file that the engine can see as 'invalid mp4' -- this check flags it). Returns a verdict with score 0-1, finding list, and retry hint.",
+  "capability": "qa",
+  "inputs": {
+    "files": {
+      "type": "string",
+      "required": true,
+      "description": "JSON object mapping each artifact kind to its file path. E.g. { 'hero_slide_01': 'C:/.../slide-01.png', 'voiceover_slide_01': 'C:/.../slide-01.wav', ... }"
+    },
+    "expected_dimensions": {
+      "type": "string",
+      "required": false,
+      "description": "JSON object mapping artifact kind to { min_width, min_height } for image checks, or { min_duration_s, max_duration_s } for audio/video. Default: skip dimension checks for any kind not listed."
+    }
+  },
+  "outputs": {
+    "score":    { "type": "number",  "description": "Aggregate score from 0 to 1 (1 = perfect)" },
+    "findings": { "type": "string",  "description": "JSON array of finding objects: { kind, severity ('info'|'low'|'medium'|'high'|'critical'), message, file, retry_hint? }" },
+    "decision": { "type": "string",  "description": "auto-approve | retry | hitl-halt" },
+    "provider": { "type": "string",  "description": "local (always; no mcode-tools call needed for basic checks)" }
+  },
+  "command": {
+    "type": "powershell",
+    "entry": "invoke.ps1",
+    "timeout_s": 60
+  }
+}

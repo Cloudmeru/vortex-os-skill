@@ -7,6 +7,11 @@
   "kind": "dynamic",
   "tier": 2,
   "inherits_from": ["supervisor.shift"],
+  "reviewer": {
+    "name": "reviewer.quality",
+    "when_to_invoke": "After all per-scene workers + BGM complete, before HITL gate 2 (storyboard approval) and again before gate 3 (final pack approval). The reviewer calls qa.cinematic-short (specialist #2) for character-continuity + palette + aspect + voice + transition checks; falls back to qa.iteration-pattern if no specialist matches. Vision-LLM checks degrade gracefully when mcode-tools is offline.",
+    "tuning_flag": "--qa-threshold {strict|normal|loose}"
+  },
   "plugin_roster": [
     { "plugin": "scene-decomposer",  "purpose": "Reads the source markdown / script and produces a JSON scene manifest + production bible under $VORTEX_HOME/state/<project>/production/.",  "when_to_dispatch": "Once, at the start of the dispatch, before any per-scene workers." },
     { "plugin": "image-cover",      "purpose": "Per-scene hero image (still frame that anchors the scene's visual brief).",  "when_to_dispatch": "Once per scene, in parallel." },

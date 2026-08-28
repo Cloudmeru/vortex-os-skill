@@ -4,6 +4,65 @@ All notable changes to the VORTEX-OS skill package are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.3.7] - 2026-08-28
+
+### Added
+- **`agents/reviewer.quality.json`** (NEW, 4.8 KB) -- Tier 2 quality
+  reviewer. The supervisor.store / media-stack / director.cinematic
+  agents invoke the reviewer after each worker batch and on the
+  final assembled package. The reviewer picks the right per-template
+  qa.* specialist (qa.media-tutorial-video, qa.cinematic-short,
+  qa.iteration-pattern) and aggregates the verdict into one of
+  three decisions: `auto-approve` / `retry` (with a retry_hint
+  passed back to the worker) / `hitl-halt`. New `--qa-threshold
+  {strict|normal|loose}` flag tunes the score threshold.
+- **`plugins/qa.core/`** (NEW, ~6 KB) -- shared basic checks. Every
+  qa.* specialist calls qa.core for the file-existence / size /
+  dimension / duration / placeholder-detection checks. Not called
+  directly by the reviewer.
+- **`plugins/qa.media-tutorial-video/`** (NEW, ~9 KB) -- specialist
+  #1. Per-slide narrative coherence (vision LLM: does the hero
+  image match the script content for that slide?), palette
+  consistency across all heroes (file-size sanity), brand color
+  sampling. Falls back to `skip` for vision checks if mcode-tools
+  is offline.
+- **`plugins/qa.cinematic-short/`** (NEW, ~8 KB) -- specialist #2.
+  Character continuity (vision LLM vs production_bible character
+  descriptions), aspect-ratio consistency across all clips,
+  transition continuity (each scene's transition_out matches the
+  next scene's transition_in), voice-preset consistency. Falls back
+  gracefully.
+- **`plugins/qa.iteration-pattern/`** (NEW, ~6 KB) -- generic
+  specialist. Every template slot is filled, every min_bytes is
+  met, every file has the right extension. No vision calls. Used
+  for the universal template and as the fallback for any future
+  template that doesn't have its own specialist.
+- **2 new SDK helpers** in `plugin-sdk/Vortex.Plugin.psm1`:
+  - `Send-VortexTempUrl` -- upload a local file via mcode-tools and
+    return a short-lived HTTPS URL
+  - `Invoke-VortexVisionQA` -- upload + call
+    `connector__matrix__describe_images` with a question; returns
+    the raw answer or a parsed `{ yes, confidence, raw, provider }`
+    object when `-ExpectYesNo` is set. Falls back to a scriptblock
+    (or `'unknown'`) when mcode-tools is offline.
+
+### Changed
+- **`agents/media-stack.json`** now declares a `reviewer` field
+  pointing at `reviewer.quality`; the media-stack agent invokes the
+  reviewer after all per-slide workers complete.
+- **`agents/director.cinematic.json`** now declares a `reviewer`
+  field pointing at `reviewer.quality`; the director invokes the
+  reviewer after all per-scene workers + BGM complete (Gate 2) and
+  again after editor.stitch (Gate 3).
+- **`SKILL.md` "Trigger Conditions"** has a new "Quality-controlled
+  media" bullet explaining when the reviewer is the right fit.
+- **`_meta.json` trigger.when_to_use** has a matching new bullet.
+
+### No engine change
+- Engine v0.3.0 is still the minimum version; v0.3.7 is skill-side
+  only. The reviewer + qa.* specialists are plugins + an agent
+  composition that the existing engine already supports.
+
 ## [0.3.6] - 2026-08-28
 
 ### Added

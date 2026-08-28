@@ -20,6 +20,11 @@
     "delegate_to_director_for_long_form"
   ],
   "invariants_compliant": ["I1", "I3", "I4", "I5", "I6"],
+  "reviewer": {
+    "name": "reviewer.quality",
+    "when_to_invoke": "After all per-slide workers complete, before HITL gate 3 (final pack approval). The reviewer calls qa.media-tutorial-video (specialist #1) for slide-based work, or qa.iteration-pattern for the universal template, and returns auto-approve / retry / HITL halt.",
+    "tuning_flag": "--qa-threshold {strict|normal|loose}"
+  },
   "plugin_roster": [
     {
       "plugin": "image-cover",

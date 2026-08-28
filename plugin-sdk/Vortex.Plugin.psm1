@@ -284,7 +284,6 @@ function Invoke-VortexMcodeConnectorAsync {
     Returns the same success_items[] shape as the synchronous variant so
     Invoke-VortexDownloadAsset works on it.
 .PARAMETER SubmitTool
-    e.g. 'connector__matrix__submit_video_generation'
 .PARAMETER QueryTool
     e.g. 'connector__matrix__query_video_generation'
 .PARAMETER SubmitArgs
@@ -330,6 +329,117 @@ function Invoke-VortexMcodeConnectorAsync {
         }
     }
     throw "Async task $taskId did not complete within ${MaxWaitSec}s"
+}
+
+# ---------------------------------------------------------------------------
+# Vision QA pipeline -- upload a local file + ask a vision LLM a question
+# ---------------------------------------------------------------------------
+
+function Send-VortexTempUrl {
+<#
+.SYNOPSIS
+    Upload a local file via mcode-tools and return a short-lived HTTPS URL
+    that the matrix vision / image / video tools can fetch. Returns the URL.
+.PARAMETER FilePath
+    Absolute path to the local file to upload.
+#>
+    [CmdletBinding()]
+    param([Parameter(Mandatory)] [string] $FilePath)
+    if (-not (Test-Path -LiteralPath $FilePath)) { throw "File not found: $FilePath" }
+    $exe = Get-VortexMcodeToolsPath
+    Write-VortexPluginLog "mcode-tools upload-temp-url: $FilePath"
+    $out = & $exe upload-temp-url $FilePath 2>&1
+    if ($LASTEXITCODE -ne 0) {
+        throw "mcode-tools upload-temp-url failed (exit=$LASTEXITCODE): $($out -join ' ')"
+    }
+    $stdout = ($out -join "`n").Trim()
+    if ($stdout -match '^https?://') { return $stdout }
+    try {
+        $obj = $stdout | ConvertFrom-Json
+        if ($obj.url) { return $obj.url }
+        if ($obj.temp_url) { return $obj.temp_url }
+    } catch {}
+    throw "mcode-tools upload-temp-url returned no URL: $stdout"
+}
+
+function Invoke-VortexVisionQA {
+<#
+.SYNOPSIS
+    Vision Q&A against a local image file. Uploads it via mcode-tools, then
+    calls connector__matrix__describe_images with a question. Returns the
+    vision model's answer as a string.
+.PARAMETER FilePath
+    Absolute path to the local image to inspect.
+.PARAMETER Question
+    The question to ask (e.g. "Does this image show a sunset over the ocean?").
+.PARAMETER ExpectYesNo
+    Switch: if set, the helper returns a parsed { yes: bool, confidence: 0..1, raw: '...' }
+    object by looking for yes/no tokens in the response. Otherwise returns
+    the raw string.
+.PARAMETER Fallback
+    If mcode-tools is unavailable, the scriptblock is invoked with
+    $Question. The scriptblock must return either a string (treated as the
+    raw answer) or a { yes, confidence, raw } object. Default fallback
+    returns "unknown" so the QA agent can degrade gracefully.
+#>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)] [string] $FilePath,
+        [Parameter(Mandatory)] [string] $Question,
+        [switch] $ExpectYesNo,
+        [scriptblock] $Fallback
+    )
+    if (-not (Test-Path -LiteralPath $FilePath)) { throw "File not found: $FilePath" }
+    if (-not (Test-VortexMcodeToolsAvailable)) {
+        Write-VortexPluginLog "mcode-tools unavailable -- vision QA fallback"
+        $fb = if ($Fallback) { & $Fallback $Question } else { 'unknown' }
+        if ($ExpectYesNo) {
+            if ($fb -is [string]) { return @{ yes = $null; confidence = 0; raw = $fb; provider = 'local-fallback' } }
+            return $fb
+        }
+        return $fb
+    }
+    try {
+        $url = Send-VortexTempUrl -FilePath $FilePath
+        $args = @{
+            image_info = @(@{
+                url     = $url
+                prompt  = $Question
+            })
+        }
+        $resp = Invoke-VortexMcodeConnector -ToolName 'connector__matrix__describe_images' -Args $args
+        # The describe_images response is an array; pick the first text field
+        $text = $null
+        if ($resp -is [array]) {
+            $first = $resp | Select-Object -First 1
+            if ($first.text) { $text = $first.text }
+            elseif ($first.answer) { $text = $first.answer }
+            elseif ($first.description) { $text = $first.description }
+        } else {
+            if ($resp.text) { $text = $resp.text }
+            elseif ($resp.answer) { $text = $resp.answer }
+            elseif ($resp.description) { $text = $resp.description }
+        }
+        if (-not $text) { $text = ($resp | ConvertTo-Json -Compress -Depth 3) }
+        Write-VortexPluginLog "vision QA: $Question -> $text"
+        if ($ExpectYesNo) {
+            $lower = $text.ToLower()
+            $yes = if ($lower -match '^\s*(yes|y|true|t|positive)\b' -or $lower -match '\b(yes|yeah|correct|positive)\b' -and $lower -notmatch '\b(no|not|negative|incorrect)\b') { $true }
+                   elseif ($lower -match '\b(no|not|negative|incorrect|false)\b') { $false }
+                   else { $null }
+            $conf = 0.7  # placeholder; vision model doesn't return a confidence by default
+            return @{ yes = $yes; confidence = $conf; raw = $text; provider = 'mcode-tools' }
+        }
+        return $text
+    } catch {
+        Write-VortexPluginLog "vision QA failed: $($_.Exception.Message) -- fallback"
+        $fb = if ($Fallback) { & $Fallback $Question } else { 'unknown' }
+        if ($ExpectYesNo) {
+            if ($fb -is [string]) { return @{ yes = $null; confidence = 0; raw = $fb; provider = 'local-fallback' } }
+            return $fb
+        }
+        return $fb
+    }
 }
 
 # ---------------------------------------------------------------------------
@@ -659,6 +769,9 @@ Export-ModuleMember -Function @(
     'Invoke-VortexDownloadAsset'
     'Invoke-VortexMcodeConnectorAsync'
     'Invoke-VortexWithFallback'
+    # vision QA
+    'Send-VortexTempUrl'
+    'Invoke-VortexVisionQA'
     # local placeholders (the fallback chain)
     'New-VortexPlaceholderPng'
     'New-VortexSilentWav'

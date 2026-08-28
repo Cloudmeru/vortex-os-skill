@@ -1,0 +1,24 @@
+{
+  "name": "qa.cinematic-short",
+  "version": "0.1.0",
+  "author": "VORTEX-OS",
+  "license": "MIT",
+  "description": "Specialist #2 for the cinematic-short template. Calls qa.core for basic checks, then runs director-specific checks: (a) character continuity -- for each character listed in production_bible.json, every scene's hero that should contain that character must match the character's visual description (vision LLM), (b) palette consistency across all heroes, (c) aspect-ratio consistency across all video clips, (d) voice-preset consistency (best-effort: all voiceover files have the same duration-per-scene pattern), (e) transition continuity (each scene's transition_out matches the next scene's transition_in). Returns the standard verdict shape so reviewer.quality can aggregate it. Falls back to 'skip' verdicts for vision checks if mcode-tools is unavailable.",
+  "capability": "qa",
+  "inputs": {
+    "files":         { "type": "string", "required": true, "description": "JSON object mapping scene-NN keys to file paths (e.g. { 'hero_scene_01': '.../imgs/scene-01-hero.png', 'voiceover_scene_01': '.../audio/scene-01-voiceover.wav', 'video_scene_01': '.../video/scene-01-clip.mp4', 'final': '.../acme-final.mp4' })" },
+    "scenes_manifest":{ "type": "string", "required": true, "description": "Path to the scenes.json produced by scene-decomposer. Used for transition continuity + per-scene aspect checks." },
+    "production_bible":{ "type": "string", "required": true, "description": "Path to the production_bible.json. Used for character-continuity checks." }
+  },
+  "outputs": {
+    "score":    { "type": "number", "description": "Aggregate score from 0 to 1" },
+    "findings": { "type": "string", "description": "JSON array of finding objects" },
+    "decision": { "type": "string", "description": "auto-approve | retry | hitl-halt" },
+    "provider": { "type": "string", "description": "mcode-tools (when vision is online) | local-fallback (when offline, vision checks skipped)" }
+  },
+  "command": {
+    "type": "powershell",
+    "entry": "invoke.ps1",
+    "timeout_s": 300
+  }
+}
