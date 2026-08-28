@@ -4,6 +4,55 @@ All notable changes to the VORTEX-OS skill package are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.3.1] - 2026-08-28
+
+### Changed
+- **Universal reword of all user-facing skill docs.** Every narrative-specific
+  example has been replaced with a domain-agnostic one so the skill reads as a
+  general orchestration tool, not a narrative / worldbuilding one.
+
+  Concretely:
+  - `SKILL.md` description + trigger conditions + storage example + anatomy
+    table + install + command reference all rewritten in universal terms.
+  - `README.md` storage diagram, 4-Tier chain (T3 workers are now described as
+    pluggable per project — research / video / data audit each get a different
+    crew), and command reference rewired.
+  - `_meta.json` description, capabilities (added 5 memory-related),
+    `trigger.when_to_use`, tags (dropped `narrative` / `worldbuilding`, added
+    `cross-project-memory` / `data-pipeline` / `research-pipeline` /
+    `design-system` / `constraint-enforcement`), `verification_status` (new
+    v0.3.1 entry + v0.3.0 cross-project memory details), and `version` bumped
+    to 0.3.1.
+  - `references/INSTRUCTIONS.md` "When To Invoke" section, the §4.1 continuity
+    example (was: "Mara's prosthetic left hand"), and the §10 end-to-end
+    walkthrough (was: "When Ocean Meets Sky / Mara on her porch / 1994"; now:
+    "release_v2_3_0 release readiness report"). Added a new §6.5
+    "Cross-Project Memory" section documenting the engine v0.3.0 memory layer.
+  - `references/architecture.md` Mermaid diagrams: 4-tier chain example
+    ("episode 2 script.md" → "release_v2/objective.md"), T3 worker labels
+    (added `data` and `researcher`), storage split example (was:
+    "scene1.md / soundscape.wav"; now: "research_notes.md / data_pipeline.py"),
+    dispatch + HITL flow ("Keeper spoke a full sentence" → "dashboard drifted
+    from the brand palette"), and lifecycle state ("script gate" → "artifact
+    gate", "next episode" → "next iteration").
+  - `walkthrough/slides/slide-{02,04,08,09,10}.html` and
+    `walkthrough/README.md` index — "moral-hinge rule" → "operator checkpoint",
+    "the protagonist is on the wrong ship" → "the schema dropped a required
+    column", "Episode 2+" → "iteration 2+", "characters contradict each other,
+    lore is forgotten" → "outputs drift, contracts contradict each other,
+    constraints are forgotten", "all 7 deliverables are bundled" → "all N
+    deliverables are bundled".
+  - `templates/iteration_pattern.json` (NEW, 6.1 KB) — universal Golden Path
+    template (release trains, research programs, audit cycles, design-system
+    evolutions, product lineups, report series, etc.). The original
+    `templates/episode_pattern.json` still ships as a working narrative
+    example for users who already have a workflow pointed at it.
+
+### Engine dependency
+- No engine change. This release is skill-side docs only; the v0.3.0 engine
+  binary is still the minimum version (it ships the cross-project memory
+  features referenced in the rewritten docs). Safe to install over v0.3.0.
+
 ## [0.3.0] - 2026-08-28
 
 ### Added

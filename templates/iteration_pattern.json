@@ -1,0 +1,36 @@
+{
+  "_comment": "Universal Golden Path template for multi-iteration dispatches. The engine reads this file when --dispatch-template is passed, substitutes {{iteration_number}}, {{iteration_title}}, {{subject_entity}}, {{counterparty_entity}}, {{setting_context}}, {{timeline_anchor}}, and {{operator_choice}} from the previous iteration's decision_history.json (when running iteration >= 2), then dispatches the resulting master objective as if the user had typed it on the command line. Domain-agnostic: works for release trains, research programs, audit cycles, design-system evolutions, product lineups, report series, and any other repeating workflow that benefits from a shared template.",
+  "name": "iteration_pattern",
+  "version": "1.0",
+  "objective_template": "Iteration {{iteration_number}} - {{iteration_title}}\n\nSubject entity: {{subject_entity}}\nCounterparty entity: {{counterparty_entity}}\nSetting / context: {{setting_context}}\nTimeline anchor: {{timeline_anchor}}\n\nPrior operator decision: {{operator_choice}}\n\nDeliver the N canonical artifacts for this iteration. The N is set per-project in the agent manifest; a default list is:\n  1. primary deliverable (.md / .docx / .pdf)\n  2. structured data export (.json / .csv / .parquet)\n  3. visual or diagram (.svg / .png / .html)\n  4. supporting analysis (.md / .ipynb)\n  5. test / verification artifact (.ps1 / .py / .sh)\n  6. audit + decisions log (.json)\n  7. continuity / consistency report (.json)\n\nPreserve all prior-iteration continuity from the {{subject_entity}} contract and the {{setting_context}} world model. Pay attention to the timeline anchor: every section must reference where in the lifecycle this iteration sits.\n\nIf this is iteration 1, write the {{subject_entity}} and {{counterparty_entity}} contracts from scratch in canonical format. If iteration 2+, read decision_history.json and carry every prior operator decision forward.\n\nGate 2 (CRITICAL - operator checkpoint) MUST surface explicitly. The operator will be asked whether to deepen the constraint at the midpoint. The {{counterparty_entity}} may or may not learn about the {{subject_entity}}'s status - this is the operator's call, not the engine's.",
+  "substitutions": {
+    "iteration_number": "1-based iteration number (read from the dispatch flag or auto-incremented from state/decision_history.json)",
+    "iteration_title": "Free-text title, e.g. 'Q1 Roll-up' or 'Cohort B' or 'Spec 2'",
+    "subject_entity": "Primary entity this iteration is about, e.g. 'payment-svc API contract' or '2025 brand guidelines' or 'Q4 financial close'",
+    "counterparty_entity": "Secondary entity, e.g. 'mobile-app client team' or 'regulator (FCA)' or 'audit committee'",
+    "setting_context": "Setting name + region + era, e.g. 'EMEA production, 2025 H1' or 'public preview, week 4'",
+    "timeline_anchor": "Time anchor, e.g. '11 days after the migration cutover' or '48 hours before the regulatory filing deadline'",
+    "operator_choice": "The most recent Gate 2 (CRITICAL) decision from state/decision_history.json, formatted as 'the operator chose: <deepen constraint | hold the line | off-screen resolution>'. Empty string on iteration 1."
+  },
+  "deliverables": [
+    {"slot": 1, "name": "primary_deliverable", "extension": ".md", "min_bytes": 8000, "description": "Primary written artifact. Must reference the timeline anchor in section 1 and resolve (or escalate) the prior iteration's dangling thread."},
+    {"slot": 2, "name": "structured_data_export", "extension": ".json", "min_bytes": 400, "description": "Structured data export (the canonical machine-readable form of the primary deliverable). Carry forward unchanged data from prior iterations verbatim."},
+    {"slot": 3, "name": "visual_or_diagram", "extension": ".svg", "min_bytes": 1000, "description": "60-90 second visual / diagram. Must include one signature element (the {{setting_context}} equivalent of 'the lighthouse foghorn' or 'the dashboard hero number')."},
+    {"slot": 4, "name": "supporting_analysis", "extension": ".md", "min_bytes": 1500, "description": "Supporting analysis (notebook, deep-dive doc, regression write-up). Cross-link to the primary deliverable and the visual."},
+    {"slot": 5, "name": "test_or_verification", "extension": ".ps1", "min_bytes": 400, "description": "Verification script or test harness. Must include at least one assertion against the {{subject_entity}} contract."},
+    {"slot": 6, "name": "audit_and_decisions_log", "extension": ".json", "min_bytes": 200, "description": "Append-only decision log. Carries forward every prior-iteration decision verbatim; adds this iteration's decisions."},
+    {"slot": 7, "name": "continuity_report", "extension": ".json", "min_bytes": 200, "description": "Per-rule pass/fail with citations back to the primary deliverable. Written by the Continuity Engine."}
+  ],
+  "hitl_gates": [
+    {"gate": 1, "severity": "HIGH", "fires_after": "deliverable 1 (primary) drafted", "ask": "Approve the primary deliverable for downstream generation? (approve and continue pre-approves the rest of the routine gates)"},
+    {"gate": 2, "severity": "CRITICAL", "fires_after": "deliverables 1-6 drafted, before deliverable 7", "ask": "Operator checkpoint: should the {{counterparty_entity}} learn about the {{subject_entity}}'s status? (Deepen the constraint / Hold the line / Off-screen resolution)"},
+    {"gate": 3, "severity": "HIGH", "fires_after": "all 7 deliverables complete", "ask": "Approve the final pack for delivery to $VORTEX_HOME/deliverables/{{project}}/? (Approving writes .manifest.json and freezes the deliverables)"}
+  ],
+  "self_heal_targets": [
+    "Tone drift (the deliverable suddenly shifts in formality vs. the prior iterations)",
+    "Anachronism (a reference or version that doesn't fit the {{setting_context}} era)",
+    "Contract violation ({{subject_entity}} acts against an established constraint from a prior iteration)",
+    "Duplicate fact (the same datum stated twice with conflicting detail)",
+    "Visual / diagram inconsistency (location described in primary deliverable not present in the visual)"
+  ]
+}

@@ -195,21 +195,33 @@ project (or multiple projects) live side by side without
 clobbering each other:
 
 ```
-%APPDATA%\Vortex-OS\deliverables\
-├── trial_of_echoes\        # project 1 (slug from the objective file)
-│   ├── .manifest.json
-│   ├── scene1.md
-│   └── trial_of_echoes.html
-├── cartographer_daughter\ # project 2
-│   ├── .manifest.json
-│   ├── episode1_script.md
-│   └── beatriz_portrait.png
-└── _unfiled\               # legacy files (post-migration)
+%APPDATA%\Vortex-OS\
+├── memory\
+│   ├── audit.jsonl
+│   └── derived\                         # v0.3.0+ cross-project memory
+│       ├── project\client_onboarding_q1.json
+│       ├── series\release.json
+│       └── operator.json
+└── deliverables\
+    ├── client_onboarding_q1\             # project 1 (slug from the objective file)
+    │   ├── .manifest.json
+    │   ├── research_notes.md
+    │   ├── data_pipeline.py
+    │   └── rollout.html
+    ├── release_v2\                       # project 2
+    │   ├── .manifest.json
+    │   ├── changelog.md
+    │   └── migration.sql
+    └── _unfiled\                         # legacy files (post-migration)
 ```
 
 The project name is auto-derived from the objective file path
-(`projects/trial_of_echoes/objective.md` → `trial_of_echoes`),
+(`projects/client_onboarding_q1/objective.md` → `client_onboarding_q1`),
 or override with `-Project <name>` / `$env:VORTEX_PROJECT`.
+A v0.3.0+ project with a `_q1` / `_v1` / `_iter1` suffix
+auto-joins a series of the same prefix; the engine keeps a
+fingerprint per project + per series + per operator in
+`memory\derived\` so subsequent dispatches inherit context.
 
 After upgrading from skill v0.1.3 or earlier, run the bundled
 migration once to move your existing data:
@@ -223,6 +235,48 @@ pwsh -NoProfile -File .\migrate-state.ps1 -DeleteSource # remove originals
 # into deliverables\_unfiled\ so the per-project layout can take over
 pwsh -NoProfile -File .\migrate-state.ps1 -AdoptFlat
 ```
+
+### Cross-project memory (engine v0.3.0+)
+
+The engine writes a small JSON fingerprint to
+`$VORTEX_HOME\memory\derived\` after every dispatch. Three layers:
+
+```
+%APPDATA%\Vortex-OS\memory\derived\
+├── project\client_onboarding_q1.json   # per-project fingerprint
+├── series\release.json                 # auto-detected series template
+└── operator.json                       # per-plugin cost + failure profile
+```
+
+Use it to:
+
+- **Skip cold starts.** A fresh dispatch on `release_v3` inherits the
+  plugin roster, the deliverable-type histogram, and the last-10 audit
+  events from the `release` series instead of starting from scratch.
+- **Rank plugins by cost + failure rate.** The operator profile ranks
+  plugins by `cost_band` × `failure_rate` × `latency_p95`, so the
+  supervisor picks the right tool without operator prompting.
+- **Audit cross-project decisions.** Every dispatch writes a
+  per-project manifest; the index in `index.json` answers "where did I
+  last see this pattern?" in O(1).
+
+Inspect / compile it from PowerShell:
+
+```powershell
+Import-Module Vortex
+Get-VortexMemory -Project client_onboarding_q1
+Get-VortexMemory -Series release
+Get-VortexMemory -Operator
+
+# Or from the engine CLI:
+pwsh -NoProfile -File .\skill.ps1 --memory-show
+pwsh -NoProfile -File .\skill.ps1 --memory-show client_onboarding_q1
+pwsh -NoProfile -File .\skill.ps1 --compile-memory
+pwsh -NoProfile -File .\skill.ps1 --compile-memory --project client_onboarding_q1 --force
+```
+
+The `--with-memory` dispatch flag (engine v0.3.1) will wire the
+fingerprint slice into the worker prompt automatically.
 
 ### Auto-update of the .NET engine
 
@@ -316,15 +370,24 @@ T2 — SHIFT SUPERVISOR (Tactical QA)
        │  • Runs sandbox verification on generated code
        │  • Holds the HITL checkpoint for high-stakes actions
        ▼
-T3 — THE CREW (Specialized Workers)
-       ├─── writer.docs          (prose, dialogue, narrative)
-       ├─── media.native         (minimax-music audio, Hailuo video)
-       ├─── coder.typescript     (HTML/CSS/JS, WebSim UIs, VibeOS)
-       ├─── coder.python         (ffmpeg scripts, data pipelines, DSP)
-       ├─── researcher.web       (web research, citations)
-       ├─── analyst.strategic    (strategy, planning, risk)
-       └─── designer.brand       (visual identity, continuity)
+T3 — THE CREW (Specialized Workers — pluggable per project)
+       ├─── writer.docs          (prose, dialogue, documentation, scripts)
+       ├─── media.native         (minimax-music audio, Hailuo video, MiniMax image)
+       ├─── coder.typescript     (HTML/CSS/JS, interactive UIs, browser apps)
+       ├─── coder.python         (data pipelines, DSP, ffmpeg scripts, tooling)
+       ├─── researcher.web       (web research, citations, fact-check)
+       ├─── analyst.strategic    (strategy, planning, risk, forecasting)
+       ├─── designer.brand       (visual identity, design system, brand)
+       ├─── data.sqlite          (SQLite queries, vector hydrate, migrations)
+       └─── data.researcher      (literature review, dataset cards, comparisons)
 ```
+
+The roster is **pluggable**: the supervisor dispatches to whichever
+T3 plugins the master objective and the agent manifests name. A
+research report uses `researcher.web` + `analyst.strategic` + `writer.docs`;
+a video campaign uses `media.native` + `designer.brand` + `writer.docs`;
+a data audit uses `data.sqlite` + `data.researcher` + `analyst.strategic`.
+Same 4-tier chain, different crew.
 
 ---
 

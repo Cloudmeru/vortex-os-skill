@@ -62,7 +62,12 @@ memory/
 swarms/
 tasks/
 deliverables/
-templates/
+# templates/ holds the Golden Path *examples* shipped with the skill
+# (iteration_pattern.json, episode_pattern.json). These are tracked in git.
+# User-created templates (anything else under templates/) are still ignored.
+templates/*
+!templates/*.json
+!templates/*.schema.json
 
 # Vortex-OS audit/check cache files (would be regenerated on every run)
 state/auto-update-check.json

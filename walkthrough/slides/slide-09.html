@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>3-gate HITL with the moral-hinge rule</title>
+<title>3-gate HITL with the operator checkpoint</title>
 <style>
 html, body {
   margin: 0;
@@ -47,7 +47,7 @@ window.addEventListener('resize', scaleSlide);
 
   <!-- Title -->
   <p style="position:absolute; left:60px; top:48px; margin:0; font-size:14px; font-weight:600; letter-spacing:4px; color:#0070F3;">DISPATCH & HITL</p>
-  <p style="position:absolute; left:60px; top:72px; margin:0; font-size:36px; font-weight:700; color:#0a0a0a; line-height:1.0;">3 gates, one moral hinge, no autopilot</p>
+  <p style="position:absolute; left:60px; top:72px; margin:0; font-size:36px; font-weight:700; color:#0a0a0a; line-height:1.0;">3 gates, one operator checkpoint, no autopilot</p>
 
   <!-- Divider -->
   <svg width="60" height="3" style="position:absolute; left:60px; top:124px;" aria-hidden="true">
@@ -65,8 +65,8 @@ window.addEventListener('resize', scaleSlide);
     <text x="20" y="20" text-anchor="middle" dominant-baseline="central" font-size="18" font-weight="700" fill="#ffffff" font-family="Times New Roman, serif">1</text>
   </svg>
   <p style="position:absolute; left:140px; top:175px; margin:0; font-size:11px; font-weight:700; letter-spacing:2px; color:#0070F3;">GATE 1 · HIGH</p>
-  <p style="position:absolute; left:140px; top:194px; margin:0; font-size:18px; font-weight:600; color:#0a0a0a;">Script approval after draft</p>
-  <p style="position:absolute; left:140px; top:222px; margin:0; font-size:12px; color:#525252;">Operator reviews the full script + a sample of dialogue before any media is generated.</p>
+  <p style="position:absolute; left:140px; top:194px; margin:0; font-size:18px; font-weight:600; color:#0a0a0a;">Artifact draft approval</p>
+  <p style="position:absolute; left:140px; top:222px; margin:0; font-size:12px; color:#525252;">Operator reviews the primary draft + the supporting artifacts before any downstream generation begins.</p>
 
   <!-- Gate 2: CRITICAL (highlighted) -->
   <svg width="460" height="110" style="position:absolute; left:60px; top:275px;" aria-hidden="true">
@@ -77,9 +77,9 @@ window.addEventListener('resize', scaleSlide);
     <rect x="0" y="0" width="40" height="40" rx="6" fill="#D4AF37"/>
     <text x="20" y="20" text-anchor="middle" dominant-baseline="central" font-size="18" font-weight="700" fill="#0a0a0a" font-family="Times New Roman, serif">2</text>
   </svg>
-  <p style="position:absolute; left:140px; top:292px; margin:0; font-size:11px; font-weight:700; letter-spacing:2px; color:#D4AF37;">GATE 2 · CRITICAL · MORAL HINGE</p>
-  <p style="position:absolute; left:140px; top:312px; margin:0; font-size:18px; font-weight:600; color:#0a0a0a;">"Continue the dispatch" — the protagonist's peril</p>
-  <p style="position:absolute; left:140px; top:340px; margin:0; font-size:12px; color:#525252; line-height:1.4;">Always surfaces, even with "approve and continue".<br>This is where the operator decides whether to deepen the danger.</p>
+  <p style="position:absolute; left:140px; top:292px; margin:0; font-size:11px; font-weight:700; letter-spacing:2px; color:#D4AF37;">GATE 2 · CRITICAL · OPERATOR CHECKPOINT</p>
+  <p style="position:absolute; left:140px; top:312px; margin:0; font-size:18px; font-weight:600; color:#0a0a0a;">"Continue the dispatch" - the high-stakes decision</p>
+  <p style="position:absolute; left:140px; top:340px; margin:0; font-size:12px; color:#525252; line-height:1.4;">Always surfaces, even with "approve and continue".<br>This is where the operator decides the next constraint, the next risk, or the next hold.</p>
 
   <!-- Gate 3: HIGH -->
   <svg width="460" height="100" style="position:absolute; left:60px; top:400px;" aria-hidden="true">
@@ -92,7 +92,7 @@ window.addEventListener('resize', scaleSlide);
   </svg>
   <p style="position:absolute; left:140px; top:415px; margin:0; font-size:11px; font-weight:700; letter-spacing:2px; color:#0070F3;">GATE 3 · HIGH</p>
   <p style="position:absolute; left:140px; top:434px; margin:0; font-size:18px; font-weight:600; color:#0a0a0a;">Final pack approval</p>
-  <p style="position:absolute; left:140px; top:462px; margin:0; font-size:12px; color:#525252;">All 7 deliverables are bundled. The pack is written to deliverables/&lt;project&gt;/ and frozen.</p>
+  <p style="position:absolute; left:140px; top:462px; margin:0; font-size:12px; color:#525252;">All N deliverables are bundled. The pack is written to deliverables/&lt;project&gt;/ and frozen.</p>
 
   <!-- Right column: gates image -->
   <img src="imgs/hitl_gates.jpg" alt="HITL gates" style="position:absolute; right:60px; top:160px; width:340px; height:340px; object-fit:cover; border-radius:6px;">

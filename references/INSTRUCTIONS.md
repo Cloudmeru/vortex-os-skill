@@ -50,12 +50,13 @@ Approve-VortexHitl -TaskId package_websim
 ## 1. When To Invoke VORTEX-OS
 
 ### Invoke VORTEX-OS when the user requests:
-- **A multi-disciplinary project** (writing + audio + code + research, all in one)
-- **A long-running creative project** with universe canon (visual novel, game, series, worldbuilding)
-- **An auditable autonomous pipeline** where every decision must be traceable
+- **A multi-disciplinary project** (writing + audio + code + research; or research + analysis + viz + report; or schema + migration + tests + docs — all in one pipeline)
+- **A long-running project** with constraint or contract enforcement across iterations (release trains, research programs, audit cycles, product lineups, design systems)
+- **An auditable autonomous pipeline** where every decision must be traceable to a named agent + timestamp + outcome
 - **A high-stakes deployment** that requires human approval before finalization
-- **A reproducible workflow** (they want to run the same kind of project again)
-- **A procedurally-generated deliverable** (audio loop, dialogue, HTML page, Python script)
+- **A reproducible workflow** (they want to run the same kind of project again, with a Golden Path template that pre-decomposes the work)
+- **A procedurally-generated deliverable** (audio loop, dashboard, report, regression test, slide deck, code refactor, etc.)
+- **A cross-project context reuse** — the user has prior projects of the same shape and wants the new dispatch to inherit the prior operator profile + deliverable-type histogram + gotcha list (engine v0.3.0+)
 
 ### Do NOT invoke VORTEX-OS when:
 - The user asks a **simple one-line question**
@@ -146,7 +147,7 @@ VORTEX-OS will sometimes halt and report that the Continuity Engine rejected a w
 
 ### 4.1 — Show the user the violation
 Read `state\inspector_interventions.log` and present the violation to the user in plain language:
-> *"The Continuity Engine caught a violation: a worker wrote a scene where Mara uses her left hand to grip something, but her character sheet says she has a prosthetic left hand. VORTEX-OS has automatically rewritten the prompt and is re-dispatching."*
+> *"The Continuity Engine caught a violation: a worker wrote a deploy script that drops the `customer_id` column, but the schema contract says the column is required. VORTEX-OS has automatically rewritten the prompt with the column-preservation constraint and is re-dispatching."*
 
 ### 4.2 — Show the optimized prompt
 The Self-Healing Optimizer writes the hardened prompt to `state\prompt_optimizations\<agent>_<timestamp>.json`. You can read it and show the user what was changed.
@@ -225,6 +226,102 @@ pwsh -NoProfile -File skill.ps1 --dispatch-template templates\my_workflow.json
 
 ---
 
+## 6.5. Cross-Project Memory (engine v0.3.0+)
+
+Engine v0.3.0 adds a small JSON fingerprint store at
+`$VORTEX_HOME\memory\derived\`. Three layers are written automatically
+after every dispatch:
+
+| Layer | File | What it captures |
+|---|---|---|
+| **Per-project** | `memory/derived/project/<slug>.json` | `project_type_hint`, deliverable-type histogram, plugin roster, last-10 audit events, the manifest of the last successful dispatch |
+| **Per-series** | `memory/derived/series/<series>.json` | Auto-detected when project names share a prefix (e.g. `release_v1`, `release_v2` → series `release`). Carries the iteration template, the cross-iteration deltas, the operator profile |
+| **Per-operator (plugin)** | `memory/derived/operator.json` | Each plugin's `cost_band`, `failure_rate`, `latency_p50/p95`, last-seen-at |
+
+The store is **append-friendly + idempotent**: every dispatch may
+update the relevant entries, but a no-op dispatch leaves the store
+unchanged. The engine compiles the store lazily — you can also
+trigger a recompile on demand.
+
+### Compile the store
+
+```powershell
+# One-shot: compile everything (default; idempotent)
+pwsh -NoProfile -File skill.ps1 --compile-memory
+
+# Just one project
+pwsh -NoProfile -File skill.ps1 --compile-memory --project client_onboarding_q1
+
+# Just one series
+pwsh -NoProfile -File skill.ps1 --compile-memory --series release
+
+# Just the operator profile
+pwsh -NoProfile -File skill.ps1 --compile-memory --operator
+
+# Dry-run (no writes)
+pwsh -NoProfile -File skill.ps1 --compile-memory --dry-run
+
+# Force a full recompile (skip the "up to date" check)
+pwsh -NoProfile -File skill.ps1 --compile-memory --all --force
+```
+
+### Browse the store
+
+From the engine CLI:
+
+```powershell
+# List everything
+pwsh -NoProfile -File skill.ps1 --memory-show
+
+# One project's fingerprint
+pwsh -NoProfile -File skill.ps1 --memory-show client_onboarding_q1
+```
+
+From PowerShell (after `Import-Module Vortex`):
+
+```powershell
+Get-VortexMemory                                # index of all projects
+Get-VortexMemory -Project client_onboarding_q1  # one project's fingerprint
+Get-VortexMemory -Series release                # one series' template + deltas
+Get-VortexMemory -Operator                      # the global plugin profile
+Get-VortexMemory -Project foo -As detail        # full JSON for one project
+Get-VortexMemory -Project foo -As json          # raw string for ConvertFrom-Json
+```
+
+### Series detection (lexical)
+
+A trailing `_<digits>` or `_<letter><digits>` suffix on the project
+name is treated as the iteration index. Works with:
+
+- `client_acme_q1`, `client_acme_q2`  →  series `client_acme`
+- `release_v1`, `release_v2`          →  series `release`
+- `audit_iter1`, `audit_iter2`        →  series `audit`
+- `feature_a1`, `feature_a2`        →  series `feature`
+- `report_2025q1`, `report_2025q2`    →  series `report_2025`
+
+The series name is the prefix before the trailing index. There's no
+explicit registration — the engine detects it on each compile.
+
+### When the memory store is missing
+
+The engine is **safe when the memory store is absent**: it writes
+nothing, complains nothing, and `--memory-show` returns "no memory
+yet". You can pre-seed a project by writing a JSON file at
+`memory/derived/project/<slug>.json` matching the schema in
+`docs/prd-phase3/prd-17-cross-project-memory.md`, but you don't have
+to. The store is a runtime optimization, not a contract.
+
+### Future integration
+
+The `--with-memory` dispatch flag is reserved for engine v0.3.1.
+When set, the dispatcher will call `Memory::ReadForInjection(p, projectName)`
+and append a bounded 4000-token slice (the project fingerprint + the
+series template + the relevant operator profile entries) to the
+worker prompt. The skill side will short-circuit the flag the same
+way it does `--compile-memory`.
+
+---
+
 ## 7. Error Handling — Complete Reference
 
 If VORTEX-OS returns a non-zero exit code, use this table to diagnose:
@@ -281,77 +378,81 @@ The LLM should **not** re-implement any of VORTEX-OS's logic. It is the human-fa
 Here's a complete end-to-end example of how an LLM should drive VORTEX-OS for a real request.
 
 ### User says:
-> *"Build a WebSim slice-of-life visual novel module for When Ocean Meets Sky — Mara is on her porch watching the tide come in. Make it feel like 1994."*
+> *"Build me a release readiness report for the v2.3.0 backend — pull the recent PRs, the test coverage delta, the open security advisories, and a 1-page executive summary."*
 
 ### LLM action:
 1. **Write the master objective:**
    ```powershell
-   New-Item -ItemType Directory -Force -Path "$env:TEMP\vortex\woms" | Out-Null
+   New-Item -ItemType Directory -Force -Path "$env:TEMP\vortex\release_v2_3_0" | Out-Null
    @"
-   # Project: When Ocean Meets Sky — Porch Scene
+   # Project: release_v2_3_0 — release readiness report
 
-   Build a single WebSim scene: Mara on her porch, 1994, watching the tide.
+   Compile a one-page executive summary of the v2.3.0 release readiness.
 
    ## Required deliverables
-   - 1 ambient audio loop (≈70 BPM, ocean + wind + distant gull)
-   - 1 prose scene (250 words, present tense, 1st person)
-   - 1 interactive HTML page with 2 choice buttons ("Stay" / "Go inside")
+   - 1 PR digest (markdown, group by area, last 14 days)
+   - 1 test-coverage delta (CSV, week-over-week)
+   - 1 open-security-advisories table (CSV, severity-sorted)
+   - 1 executive summary (1 page, plain prose, decision-ready)
+   - 1 HTML dashboard (single page, links to the above)
 
    ## Continuity rules
-   - Mara is 19, has a prosthetic left hand
-   - The porch is wood, faces west, salt-weathered
-   - The radio inside plays only one station: a continuous weather report
-   - Tone: quiet, melancholic, intimate
-   - Era: 1994 (no smartphones, no internet references)
+   - The release branch is `release/v2.3.0`; PRs to any other branch are out of scope
+   - Test coverage must include the new `payment-svc` module
+   - Security advisories must cite the CVE number; missing CVE → flag as "uncatalogued"
+   - Tone: terse, factual, no marketing language
+   - The dashboard must use our existing brand palette (#0070F3 primary)
 
    ## High-stakes
-   - package_websim: requires operator approval before writing the final HTML
-   "@ | Set-Content -Path "$env:TEMP\vortex\woms\objective.md" -Encoding UTF8
+   - package_release: requires operator approval before writing the final HTML
+   "@ | Set-Content -Path "$env:TEMP\vortex\release_v2_3_0\objective.md" -Encoding UTF8
    ```
 
 2. **Dispatch:**
    ```powershell
-   pwsh -NoProfile -File skill.ps1 --dispatch-master "$env:TEMP\vortex\woms\objective.md"
+   pwsh -NoProfile -File skill.ps1 --dispatch-master "$env:TEMP\vortex\release_v2_3_0\objective.md"
    ```
 
 3. **VORTEX-OS runs autonomously for several minutes:**
-   - T0 decomposes → 3 tasks (audio, prose, code)
-   - T1 assigns specialist swarms
+   - T0 decomposes → 4 tasks (PR digest, coverage, advisories, summary + dashboard)
+   - T1 assigns specialist swarms (data-researcher, data-analyst, writer.docs, coder.typescript)
    - T2 dispatches workers
-   - T3 generates; one violation triggers the Self-Healing Optimizer
-   - HITL halts on `package_websim`
+   - T3 generates; one violation triggers the Self-Healing Optimizer (e.g. dashboard hex code drift)
+   - HITL halts on `package_release`
 
 4. **VORTEX-OS prints:**
    ```
-   >> PENDING_HUMAN: task_id=package_websim
-   >> Proposed action: write deliverables/scene.html
+   >> PENDING_HUMAN: task_id=package_release
+   >> Proposed action: write deliverables/release_v2_3_0/release_dashboard.html
    >> Severity: HIGH
    >> Context: final packaging step
    ```
 
 5. **LLM surfaces to user:**
-   > *"VORTEX-OS has finished generating the audio, prose, and code. It's now asking for your approval to write the final HTML page. The audio is at `deliverables\bedroom_loop_70bpm.wav`, the prose at `deliverables\scene.md`, and the code is ready. Shall I approve the final packaging?"*
+   > *"VORTEX-OS has finished the PR digest, coverage delta, advisory table, and exec summary. It's now asking for your approval to write the final HTML dashboard. All four artifacts are staged in the swarm folder. Shall I approve the final packaging?"*
 
 6. **User says:** "Approve."
 
 7. **LLM relays:**
    ```powershell
-   pwsh -NoProfile -File skill.ps1 --hitl-approve package_websim
+   pwsh -NoProfile -File skill.ps1 --hitl-approve package_release
    ```
 
 8. **VORTEX-OS finishes:**
    ```
-   ✓ Approved: package_websim
-   ✓ Wrote: deliverables/scene.html (3.2 KB)
+   ✓ Approved: package_release
+   ✓ Wrote: deliverables/release_v2_3_0/release_dashboard.html (8.1 KB)
    ```
 
 9. **LLM reports to user:**
-   > *"Done! Your WebSim scene is ready in `deliverables\`:
-   > - `bedroom_loop_70bpm.wav` (705 KB ambient loop)
-   > - `scene.md` (256 words of prose)
-   > - `scene.html` (interactive page with Stay / Go inside buttons)
+   > *"Done! Your release readiness pack is in `deliverables\release_v2_3_0\`:
+   > - `pr_digest.md` (14-day PR roll-up, grouped by area)
+   > - `coverage_delta.csv` (week-over-week deltas)
+   > - `security_advisories.csv` (severity-sorted, CVE-cited)
+   > - `exec_summary.md` (1 page, decision-ready)
+   > - `release_dashboard.html` (linked landing page)
    >
-   > Open `deliverables\scene.html` in a browser to play it."*
+   > Open `release_dashboard.html` in a browser to view the pack."*
 
 ---
 

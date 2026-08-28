@@ -1,7 +1,7 @@
 ---
 name: VORTEX-OS
 display_name: VORTEX-OS - Multi-Agent Orchestration Engine
-version: 0.3.0
+version: 0.3.1
 description: |
   VORTEX-OS is a self-bootstrapping PowerShell skill that drives the
   [Cloudmeru/vortex-os-dotnet](https://github.com/Cloudmeru/vortex-os-dotnet)
@@ -10,22 +10,36 @@ description: |
   Human-in-the-Loop approval. The engine decomposes a master objective
   into a 4-tier chain of command (planner → supervisor → shift →
   specialized workers), runs the workers in parallel across distinct
-  domains (writing, audio, code, video, image, data, etc.), auto-
-  rewrites any prompt that violates a continuity rule, gates high-
-  stakes actions behind explicit human approval, and writes a fully-
-  attributed audit log (every action tied to a named agent, a
+  domains (writing, audio, code, video, image, data, research, design,
+  etc.), auto-rewrites any prompt that violates a continuity rule, gates
+  high-stakes actions behind explicit human approval, and writes a
+  fully-attributed audit log (every action tied to a named agent, a
   timestamp, and a status).
 
+  Engine v0.3.0+ adds a **cross-project memory layer**: every dispatch
+  leaves behind a per-project fingerprint, an operator (plugin) profile,
+  and an auto-detected series template (so a `q1` / `q2` / `ep1` / `ep2`
+  sequence can share context). The skill exposes these via
+  `Get-VortexMemory` and the engine flags `--compile-memory` /
+  `--memory-show`.
+
   Trigger this skill when the user's request exhibits one or more of:
-    - multi-domain work (3+ distinct deliverable types in one pipeline)
-    - continuity / consistency requirements (character, era, lore,
-      brand, style, or any rules that must survive across iterations)
+    - multi-domain work (3+ distinct deliverable types in one pipeline:
+      writing + audio + code; research + analysis + viz; or
+      schema + migration + tests + docs, etc.)
+    - continuity / consistency requirements (entities, era, brand,
+      style, terminology, schema, API contract, code style, regulatory
+      constraints, or any rules that must survive across iterations)
     - explicit Human-in-the-Loop approval on high-stakes actions
       (publishing, packaging, writing to a protected directory, etc.)
     - a per-agent audit trail (every decision attributable to a named
       worker, with timestamp and outcome)
-    - long-running / episodic / series scope (Golden Path templates
-      that replay across episodes, chapters, releases, etc.)
+    - long-running / multi-iteration / series scope (a project broken
+      into multiple runs, releases, episodes, or chapters that should
+      share context)
+    - cross-project context reuse (so a fresh dispatch on a new run of
+      a known project can pick up the prior operator profile + the
+      deliverable-type histogram instead of starting cold)
     - in-house / offline execution (no external API dependencies
       for the orchestration layer)
 
@@ -50,7 +64,11 @@ VORTEX-OS is a **self-bootstrapping PowerShell skill** that drives the
 [Cloudmeru/vortex-os-dotnet](https://github.com/Cloudmeru/vortex-os-dotnet)
 .NET 10 C++/CLI engine to orchestrate **multi-agent, multi-domain
 work pipelines** end-to-end with strict continuity enforcement,
-self-healing prompts, and Human-in-the-Loop approval gates.
+self-healing prompts, and Human-in-the-Loop approval gates. It is
+domain-agnostic: the same engine drives a research report, a software
+release, a data audit, a design system, a video campaign, or a
+narrative series — only the master objective and the plugin roster
+change.
 
 The first time the skill runs, it auto-installs the engine (downloads 4
 files from the public `vortex-os-dotnet` release, places them in a
@@ -76,6 +94,11 @@ pwsh -NoProfile -File .\skill.ps1 --dispatch-master my_project\objective.md
 
 # 4. When the engine pages you for HITL approval:
 pwsh -NoProfile -File .\skill.ps1 --hitl-approve <task_id>
+
+# 5. (Optional, v0.3.0+) Inspect the cross-project memory the engine
+#    left behind from this dispatch:
+pwsh -NoProfile -File .\skill.ps1 --memory-show my_project
+Get-VortexMemory -Project my_project
 ```
 
 After the first install, the engine is available directly as a
@@ -87,6 +110,11 @@ Get-VortexAgent
 Get-VortexHitlPending
 Approve-VortexHitl -TaskId package_websim
 Test-VortexPackage
+
+# Cross-project memory (v0.3.0+)
+Get-VortexMemory -Project my_project
+Get-VortexMemory -Series q1_release
+Get-VortexMemory -Operator
 ```
 
 For the **complete operator walkthrough** (HITL protocol, Continuity
@@ -108,15 +136,17 @@ the 4-line install contract, read [`COMPATIBILITY.md`](./COMPATIBILITY.md).
 **Use this skill when the user's prompt exhibits one or more of:**
 
 - **Multi-domain work** — 3+ distinct deliverable types in one pipeline
-  (e.g. writing + audio + code + image; or research + analysis +
-  visualization + report; or schema + migration + tests + docs)
+  (e.g. research + analysis + visualization + report; or writing +
+  audio + code + image; or schema + migration + tests + docs; or
+  storyboard + voiceover + music + cut)
 - **Hierarchical task decomposition** — the user wants a complex
   objective broken into a 4-tier chain of command (planner →
   supervisor → shift → workers) rather than a single LLM call
 - **Continuity / consistency requirements** — the user names rules
-  that must survive across iterations (character, era, lore, brand,
-  style, terminology, schema, API contract, code style, etc.) and
-  wants the engine to detect and auto-rewrite violations
+  that must survive across iterations (entities, brand, style,
+  terminology, schema, API contract, code style, regulatory
+  constraints, design system, data model, etc.) and wants the engine
+  to detect and auto-rewrite violations
 - **Self-healing prompts** — the user wants the system to recover
   from LLM drift without manual intervention
 - **Auditable LLM pipelines** — every decision must be attributable
@@ -126,9 +156,13 @@ the 4-line install contract, read [`COMPATIBILITY.md`](./COMPATIBILITY.md).
   explicitly wants to gate finalization (publishing, packaging,
   writing to a protected directory, deploying, etc.) behind human
   confirmation
-- **Long-running / episodic / series scope** — the user has a
-  multi-episode / multi-chapter / multi-release project and wants
+- **Long-running / multi-iteration / series scope** — the user has a
+  multi-iteration / multi-release / multi-chapter project and wants
   Golden Path templates that replay the same workflow for each unit
+- **Cross-project context reuse** — the user has run similar projects
+  before and wants the new dispatch to inherit the prior operator
+  (plugin) profile, deliverable-type histogram, and known gotchas
+  instead of starting cold (engine v0.3.0+)
 - **In-house / offline execution** — the orchestration layer must
   not depend on external APIs; everything runs locally on the host
 - **Cross-domain coordination** — the project touches multiple
@@ -156,10 +190,10 @@ This skill folder is laid out as follows. Read only what you need.
 | `references/architecture.md` | **Mermaid architecture diagrams** — 7 diagrams (big picture, 4-tier chain, storage split, install flow, dispatch+HITL flow, auto-update, data lifecycle) + component reference | When you need the visual mental model (~16 KB, loaded on demand) |
 | `README.md` | **User-facing landing page** — install flow, full command reference, 4-tier diagram, license | When the user is new to VORTEX-OS or asks for the public overview |
 | `COMPATIBILITY.md` | **Multi-code-agent support** matrix + the 4-line install contract | When a code agent (minimax code, hermes, etc.) needs to know how to drive the skill |
-| `CHANGELOG.md` | Per-version changes | When the user asks "what changed in v0.1.2?" |
+| `CHANGELOG.md` | Per-version changes | When the user asks "what changed in v0.3.0?" |
 | `_meta.json` | **Platform metadata** (skill_id, version, capabilities, install flow) | When the platform introspects the skill for registration / discovery |
 | `walkthrough/` | **Visual HTML walkthrough** — 11 slides, auto-advancing viewer, MP4 recording recipe (PowerShell + Edge + ffmpeg). Open `walkthrough/index.html` in a browser | When you want a 5-minute visual tour of the skill before reading |
-| `idea-future-recommendations.md` | 18 prioritized next-version items + 12 known gaps + 5 open questions | When planning v0.1.7+ roadmap |
+| `idea-future-recommendations.md` | 18 prioritized next-version items + 12 known gaps + 5 open questions | When planning v0.3.1+ roadmap |
 | `idea-architecture-decisions.md` | 15 Architecture Decision Records (engine choice, two-root storage, user-scope install, self-bootstrapping, etc.) | When you need to know *why* a design decision was made |
 | `idea-faq-and-pitfalls.md` | 30+ Q&As across 10 categories (install, storage, HITL, self-heal, manifest, audio, etc.) | When something is broken and you need a fast answer |
 | `skill.ps1` | **The one-shot CLI entry point.** Self-bootstrapping: auto-installs the engine on first run. This is the primary command for any code agent | Always invoke this to dispatch a command |
@@ -171,7 +205,7 @@ This skill folder is laid out as follows. Read only what you need.
 | `verify.ps1` | **Post-upload verification** (8 checks: file presence, JSON validity, branding, agent discovery, agent lint, help banner, engine installation). Self-bootstrapping | Run before publishing; CI gate |
 | `build.ps1` | **Source-build helper** for forkers (downloads + compiles the .NET engine from `vortex-os-dotnet`) | Only if you've cloned this skill to fork the engine |
 | `agents/` | **3 supervisor/inspector manifest files** (the engine's input) | When writing custom agent manifests |
-| `templates/` | Golden Path episode template (engine reads it when `--dispatch-template` is passed) | When designing a multi-episode / series workflow |
+| `templates/` | Golden Path iteration template (engine reads it when `--dispatch-template` is passed) | When designing a multi-iteration / multi-release workflow |
 
 ---
 
@@ -234,26 +268,33 @@ sessions and conversations don't clobber each other:
 
 ```
 $VORTEX_HOME/
+├── memory/
+│   ├── audit.jsonl                              # append-only event log
+│   └── derived/                                 # v0.3.0+ cross-project memory
+│       ├── project/<slug>.json                  # per-project fingerprint
+│       ├── series/<series>.json                 # per-series iteration template
+│       └── operator.json                        # per-plugin operator profile
 └── deliverables/
-    ├── trial_of_echoes/                 # project 1 (auto-derived)
-    │   ├── .manifest.json               # self-describing project metadata
-    │   ├── scene1.md
-    │   ├── scene2.md
-    │   ├── scene3.md
-    │   ├── mira_portrait.png
-    │   └── trial_of_echoes.html
-    ├── cartographer_daughter/          # project 2
+    ├── client_onboarding_q1/                    # project 1 (auto-derived)
+    │   ├── .manifest.json                       # self-describing project metadata
+    │   ├── research_notes.md
+    │   ├── data_pipeline.py
+    │   ├── summary_report.pdf
+    │   └── rollout.html
+    ├── release_v2/                              # project 2
     │   ├── .manifest.json
-    │   ├── episode1_script.md
-    │   └── beatriz_portrait.png
-    └── _unfiled/                        # legacy files (post-migration)
+    │   ├── changelog.md
+    │   ├── migration.sql
+    │   └── regression_tests.ps1
+    └── _unfiled/                                # legacy files (post-migration)
 ```
 
 The project name is auto-derived (in priority order):
+
 1. `$env:VORTEX_PROJECT`
 2. The `-Project <name>` flag on `skill.ps1`
-3. The parent dir of the `--dispatch-master` arg (e.g. `projects/trial_of_echoes/objective.md` → `trial_of_echoes`)
-4. The filename of the objective without extension (e.g. `cartographer_ep1.md` → `cartographer_ep1`)
+3. The parent dir of the `--dispatch-master` arg (e.g. `projects/client_onboarding_q1/objective.md` → `client_onboarding_q1`)
+4. The filename of the objective without extension (e.g. `release_v2.md` → `release_v2`)
 5. If none of the above apply, deliverables land at the flat `deliverables\` root
 
 To re-dispatch the same project with new instructions, the engine
@@ -283,6 +324,68 @@ pwsh -NoProfile -File .\migrate-state.ps1 -DeleteSource
 #    into deliverables\_unfiled\ so the new per-project layout can take over
 pwsh -NoProfile -File .\migrate-state.ps1 -AdoptFlat
 ```
+
+---
+
+## Cross-project memory (engine v0.3.0+)
+
+Starting with engine v0.3.0, every dispatch leaves behind a small
+JSON fingerprint in `$VORTEX_HOME/memory/derived/`. Three layers:
+
+| Layer | File | What it captures |
+|---|---|---|
+| **Per-project** | `memory/derived/project/<slug>.json` | The project's `project_type_hint`, deliverable-type histogram, the plugin roster used, the last 10 audit events, the manifest of the last successful dispatch |
+| **Per-series** | `memory/derived/series/<series>.json` | Auto-detected when project names share a prefix (e.g. `release_q1`, `release_q2` → series `release`). Carries the iteration template, the cross-iteration deltas, the operator (plugin) profile |
+| **Per-operator (plugin)** | `memory/derived/operator.json` | Each plugin's `cost_band`, `failure_rate`, `latency_p50/p95`, and last-seen-at — so the dispatcher can rank candidates for the next dispatch |
+
+**Series detection** is purely lexical: a trailing `_<digits>` or
+`_<letter><digits>` suffix on the project name is treated as the
+iteration index. Works with `client_acme_q1/q2`, `release_v1/v2`,
+`audit_iter1/iter2`, `episode_ep1/ep2`, etc. The series name is the
+prefix.
+
+To (re)compile the memory store from the on-disk deliverables +
+audit log + agent manifests:
+
+```powershell
+# One-shot — compile everything (default; idempotent, no-op if up to date)
+pwsh -NoProfile -File .\skill.ps1 --compile-memory
+
+# Just one project
+pwsh -NoProfile -File .\skill.ps1 --compile-memory --project client_onboarding_q1
+
+# Just the series the project belongs to
+pwsh -NoProfile -File .\skill.ps1 --compile-memory --series release
+
+# Just the operator profile (plugin cost + failure stats)
+pwsh -NoProfile -File .\skill.ps1 --compile-memory --operator
+
+# Dry-run + force
+pwsh -NoProfile -File .\skill.ps1 --compile-memory --dry-run
+pwsh -NoProfile -File .\skill.ps1 --compile-memory --all --force
+```
+
+To inspect the store from PowerShell (after `Import-Module Vortex`):
+
+```powershell
+Get-VortexMemory -Project client_onboarding_q1
+Get-VortexMemory -Series release
+Get-VortexMemory -Operator
+Get-VortexMemory -As detail   # full JSON for one project
+Get-VortexMemory -As json     # raw string for ConvertFrom-Json
+```
+
+Or via the engine CLI:
+
+```powershell
+pwsh -NoProfile -File .\skill.ps1 --memory-show
+pwsh -NoProfile -File .\skill.ps1 --memory-show client_onboarding_q1
+```
+
+**Future integration:** the `--with-memory` dispatch flag is
+reserved for engine v0.3.1 — when set, the dispatcher will read the
+relevant slice of `derived/` and inject it into the worker prompt
+as a "context this dispatch inherits" block.
 
 ## Auto-update of the .NET engine
 
@@ -364,6 +467,8 @@ The most common invocations:
 | Check HITL queue | `pwsh -NoProfile -File .\skill.ps1 --hitl-status` |
 | Approve / deny a HITL halt | `pwsh -NoProfile -File .\skill.ps1 --hitl-approve <task_id>` / `--hitl-deny <task_id>` |
 | View audit log | `pwsh -NoProfile -File .\skill.ps1 --audit-trail` |
+| Compile the cross-project memory store | `pwsh -NoProfile -File .\skill.ps1 --compile-memory` |
+| Show one project's memory fingerprint | `pwsh -NoProfile -File .\skill.ps1 --memory-show my_project` |
 | Force engine reinstall | `pwsh -NoProfile -File .\skill.ps1 -Install` |
 | Engine version | `pwsh -NoProfile -File .\skill.ps1 --version` |
 

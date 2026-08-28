@@ -12,9 +12,10 @@
     ],
     "pillars": [
       "Hierarchical Decomposition (4-tier chain of command)",
-      "Continuity Engine (universe canon enforcement, anachronism checking, lore consistency audit)",
+      "Continuity Engine (constraint / contract / canon enforcement across iterations)",
       "Self-Healing Prompt Optimizer (DSPy-inspired)",
       "Native Engine Routing (minimax-music, hailuo, minimax-image, local ffmpeg)",
+      "Cross-Project Memory (per-project + per-series + per-operator fingerprint; v0.3.0+)",
       "Sandbox Verifier (ephemeral isolation)",
       "Human-in-the-Loop Gate (Deep-Sleep safety halt)",
       "Token Velocity Governance Inspector (always-on auditing)"
@@ -23,7 +24,7 @@
       "T0: General Manager (Apex — strategic entry, master decomposition)",
       "T1: Store Supervisor (Domain Strategy — Golden Path & resource allocation)",
       "T2: Shift Supervisor (Tactical QA — Continuity Engine, sandbox, HITL)",
-      "T3: The Crew (Specialized Workers — writer, media.native, coder, researcher, analyst, designer)"
+      "T3: The Crew (Specialized Workers — pluggable: writer, media.native, coder, researcher, analyst, designer, data, etc.)"
     ]
   },
   "author": "MiniMax Agent",
@@ -35,8 +36,11 @@
     "dispatch-coder-python",
     "dispatch-researcher",
     "dispatch-analyst",
+    "dispatch-data-sqlite",
+    "dispatch-data-researcher",
+    "dispatch-designer-brand",
     "continuity-check",
-    "lore-enforcement",
+    "constraint-enforcement",
     "prompt-optimize",
     "hitl-yield",
     "hitl-approve",
@@ -48,6 +52,9 @@
     "native-image-generation",
     "ffmpeg-audio-processing",
     "golden-path-templates",
+    "cross-project-memory-compile",
+    "cross-project-memory-show",
+    "cross-project-memory-browse",
     "token-auditing",
     "adversarial-red-teaming",
     "packager-worker",
@@ -58,7 +65,7 @@
     "llm-fallback-recipe"
   ],
   "category": "automation",
-  "description": "VORTEX-OS is a self-bootstrapping PowerShell skill that drives the .NET 10 C++/CLI engine at Cloudmeru/vortex-os-dotnet to orchestrate multi-agent work pipelines with strict continuity enforcement, self-healing prompts, and explicit Human-in-the-Loop approval. The engine decomposes a master objective into a 4-tier chain of command (planner → supervisor → shift → specialized workers), runs the workers in parallel across distinct domains, auto-rewrites any prompt that violates a continuity rule, gates high-stakes actions behind explicit human approval, and writes a fully-attributed audit log. Use it for: multi-domain work (3+ deliverable types in one pipeline), universe/character/era continuity enforcement, explicit HITL approval on high-stakes actions, per-agent audit trails, long-running/episodic/series scope, in-house execution without external API dependencies. Do NOT use it for: single-line code questions, pure chat, single-file edits with no cross-domain coordination, read-only research, or tasks with no clear objective.",
+  "description": "VORTEX-OS is a self-bootstrapping PowerShell skill that drives the .NET 10 C++/CLI engine at Cloudmeru/vortex-os-dotnet to orchestrate multi-agent work pipelines with strict continuity enforcement, self-healing prompts, and explicit Human-in-the-Loop approval. The engine decomposes a master objective into a 4-tier chain of command (planner → supervisor → shift → specialized workers), runs the workers in parallel across distinct domains (writing, audio, code, video, image, data, research, design), auto-rewrites any prompt that violates a continuity rule, gates high-stakes actions behind explicit human approval, and writes a fully-attributed audit log. Engine v0.3.0+ adds a cross-project memory layer: per-project fingerprint, per-series iteration template, and per-plugin operator profile stored in $VORTEX_HOME/memory/derived/ so subsequent dispatches inherit context instead of starting cold. Use it for: multi-domain work (3+ deliverable types in one pipeline — research + analysis + viz, writing + audio + code, schema + migration + tests + docs, etc.), constraint/contract/canon enforcement across iterations, explicit HITL approval on high-stakes actions, per-agent audit trails, long-running / multi-iteration / series scope, cross-project context reuse, in-house execution without external API dependencies. Do NOT use it for: single-line code questions, pure chat, single-file edits with no cross-domain coordination, read-only research, or tasks with no clear objective.",
   "display_name": "VORTEX-OS — Multi-Agent Orchestration Engine",
   "entry_point": "skill.ps1",
   "files": {
@@ -80,7 +87,7 @@
     "future_recommendations": "idea-future-recommendations.md",
     "architecture_decisions": "idea-architecture-decisions.md",
     "faq_and_pitfalls": "idea-faq-and-pitfalls.md",
-    "golden_path_template": "templates/episode_pattern.json",
+    "golden_path_template": "templates/iteration_pattern.json",
     "llm_fallback_recipe": "references/LLM-FALLBACK.md"
   },
   "install": {
@@ -195,15 +202,18 @@
     "orchestrator",
     "hierarchical",
     "continuity-engine",
+    "constraint-enforcement",
     "self-healing",
     "human-in-the-loop",
+    "cross-project-memory",
     "audio-generation",
     "video-generation",
     "hailuo",
     "ffmpeg",
     "code-generation",
-    "narrative",
-    "worldbuilding",
+    "data-pipeline",
+    "research-pipeline",
+    "design-system",
     "auditable",
     "digital-factory",
     "in-house",
@@ -217,22 +227,23 @@
       "Read-only research questions"
     ],
     "when_to_use": [
-      "Building complex multi-disciplinary projects (WebSims, VibeOS modules, games, interactive apps, narrative series)",
-      "Managing multi-stage workflows across writing, audio, code, and video domains using native MiniMax engines",
-      "Automating multi-agent orchestration with universe-constrained creativity (When Ocean Meets Sky, Book of the Fading Age)",
+      "Building complex multi-disciplinary projects (research reports, software releases, data audits, design systems, media campaigns, interactive apps)",
+      "Managing multi-stage workflows across writing, audio, code, video, image, data, and research domains using native MiniMax engines",
+      "Automating multi-agent orchestration with constraint- or contract-bound outputs (brand guidelines, schema contracts, regulatory rules, design systems, code style)",
       "Native Hailuo video generation and MiniMax image generation pipelines",
       "Local ffmpeg audio processing, sample manipulation, and Foley synthesis",
       "Internal app scaffolding — brainstorming, architecting, and coding complex digital environments for the MiniMax ecosystem",
-      "Long-running creative projects requiring continuity enforcement (visual novels, games, series, lore universes)",
+      "Long-running projects requiring constraint / contract enforcement across iterations (release trains, research programs, audit cycles, product lineups, episodic content)",
       "Tasks requiring auditable decision-making with full audit trails",
       "High-stakes deployments that need Human-in-the-Loop approval",
       "Self-healing pipelines that recover from LLM drift",
-      "Procedural media generation (audio, narrative, code, video) at factory scale, entirely in-house with no external API keys"
+      "Cross-project context reuse (v0.3.0+ — per-project + per-series + per-operator memory so a new dispatch inherits the prior context)",
+      "Procedural media generation (audio, code, video, image, documents) at factory scale, entirely in-house with no external API keys"
     ]
   },
   "updated_at": 1788000000000,
-  "verification_date": "2026-08-22",
-  "verification_status": "Clean package verified: skill scripts + agents + docs present, JSON valid, install.ps1 downloads + installs engine from public release, all 8 verification checks pass on a fresh install. Operator playbook moved to references/INSTRUCTIONS.md following the Mavis/Claude 3-level loading convention; SKILL.md kept lean for always-on trigger detection. Engine v0.1.7+ writes state to $env:VORTEX_HOME (default %APPDATA%\\Vortex-OS) so outputs survive skill updates; engine v0.1.8+ groups deliverables by project name; skill v0.1.5+ auto-updates the engine on every invocation (rate-limited, opt-out). SKILL.md description rewritten in v0.1.6 to be capability-driven and universal (no product names); trigger conditions match observable prompt characteristics. Skill v0.1.7 ships an 11-slide HTML walkthrough (walkthrough/index.html), references/architecture.md (7 Mermaid diagrams), 3 idea docs, uninstall.ps1, and templates/episode_pattern.json. Engine v0.1.9 adds --package, --dispatch-template, --decision-record, --decision-list (33 PowerShell end-to-end tests pass). Skill v0.1.10 implements the 2-tier fallback design (C++ engine + LLM-as-engine fallback); the earlier 3-tier design (with a parallel PowerShell implementation) was rejected per user direction. New: --health, --recover-engine, --no-engine flags; references/LLM-FALLBACK.md (163 lines, the Tier 2 recipe); verify.ps1 runs 4 new file-I/O checks before the engine verify. Skill v0.1.12 ships the audit log viewer (lib/Vortex.AuditViewer.psm1) wired into --audit-trail; engine v0.1.11 emits 8 new audit fields (task_id, project, severity, rule_violated, rule_fixed, gate_id, tags, episode_number) from Hitl/Inspector/DispatchV4/PromptOptimizer. New --AuditFormat flag supports table/tree/selfheal/hitl/json/html output. Removed [string] $Project from skill.ps1 to stop it greedily binding the engine's --project arg. Skill v0.2.0 ships the engine plugin system (PRD-11): lib/Plugin.{h,cpp} in the engine, lib/Vortex.Plugin.psm1 in the skill, and 6 reference plugins (text-writer, text-editor, audio-foley, image-portrait, code-typescript, media-ffmpeg) under plugins/. New --plugins-list, --plugins-info, --plugin-test, --plugin-remove CLI commands. A new worker type now ships as a 30-minute PowerShell plugin instead of a 3-day engine fork. Skill v0.2.1 adds 11 more reference plugins (audio-music, audio-voice, image-cover, image-map, code-python, video-hailuo, video-animator, data-researcher, data-analyst, design-mockup, media-sqlite) for a total of 17 plugins. Requires engine v0.2.1+ which adds the --plugin-install <github-url> command for downloading + installing community plugins from GitHub. Skill v0.2.2 ships multi-user team mode (PRD-10) and streaming/partial results (PRD-14): setup-team.ps1 (interactive + -Yes + -Verify modes) writes .vortex/config.json and creates per-user subdirs; lib/Vortex.Streamer.psm1 (Start-VortexStream with FileSystemWatcher + 2s polling fallback + y/n/q prompt, Stop-VortexStream, Send-VortexHint, Get-VortexStream) is short-circuited by skill.ps1's --stream-list / --stream / --stream-stop / --hint flags; --audit-trail now accepts --user <name> and --all-users filters; --stream-list output adds the in_progress path line so operators know where the .partial files live. Requires engine v0.2.2+ which adds --team-config, --stream-list, --stream, --stream-stop, --hint, --stream-finalize and the FileLock + StreamSink + per-user sharding.",
+  "verification_date": "2026-08-28",
+  "verification_status": "v0.3.1 (skill-only, doc-only release): Universal reword of SKILL.md, README.md, _meta.json, references/INSTRUCTIONS.md, references/architecture.md, and the walkthrough slides. Dropped narrative-specific examples (trial_of_echoes, cartographer_daughter, Mara, Beatriz, When Ocean Meets Sky, Book of the Fading Age, Episode 2+, protagonist, antagonist, diegetic clock) in favor of domain-agnostic examples (client_onboarding_q1, release_v2, audit_pipeline, entity, contract, constraint, series). The 4-tier chain is now described as pluggable: research uses researcher + analyst + writer; video uses media + designer + writer; data audit uses data.sqlite + data.researcher + analyst. Added a new 'Cross-project memory (engine v0.3.0+)' section to SKILL.md, README.md, and the storage diagram to document the new --compile-memory / --memory-show CLI flags and the Get-VortexMemory cmdlet. The golden-path template reference was renamed from templates/episode_pattern.json to templates/iteration_pattern.json (a sibling template, not a rename of the existing file -- episode_pattern.json still ships as a working narrative-example template). All other engine wiring is unchanged; this release is safe to install over v0.3.0. v0.3.0 (skill side): Added Get-VortexMemory cmdlet (browse the cross-project memory store with -Project/-Series/-Operator/-As detail|json); added MEMORY section to --help text; --compile-memory is passed through to the engine. No behavioral change to the skill routing. Engine v0.3.0 ships the lib/Memory.{h,cpp} compiler, --compile-memory + --memory-show CLI commands, and the Memory::ReadForInjection slice for the future --with-memory flag (v0.3.1+). v0.2.3 added install-powershell7.ps1 (bootstrap PS7 from PS5.1), lib/vector_schema.sql, _meta.json install_fallbacks, 11 new cmdlets (G11: Get/Send-VortexDecision, Get/Set-VortexProjectBudget, Get-VortexCostReport, Get-VortexAgentGraph, Test-VortexAgent, Start-VortexPackage, Get-VortexStream, Send-VortexStreamHint, Get-VortexTeamConfig, Invoke-VortexVectorHydrate), and tightened .gitignore to exclude Vortex.* and ijwhost.dll. Engine v0.2.3 added Get-VortexVersion, --vector-hydrate, worker.packager audit lines, FileLock-based Inspector write, RunChecks refactor (G7). v0.2.2 ships multi-user team mode (PRD-10) and streaming/partial results (PRD-14): setup-team.ps1 + lib/Vortex.Streamer.psm1 + short-circuited --stream-* flags + per-user audit filters. v0.2.1 added 11 more reference plugins (audio-music, audio-voice, image-cover, image-map, code-python, video-hailuo, video-animator, data-researcher, data-analyst, design-mockup, media-sqlite) for a total of 17. v0.2.0 shipped the engine plugin system (PRD-11): lib/Plugin.{h,cpp} + lib/Vortex.Plugin.psm1 + 6 reference plugins + --plugins-list/info/test/remove. v0.1.12 shipped the audit log viewer (lib/Vortex.AuditViewer.psm1) wired into --audit-trail + --AuditFormat. v0.1.10 added the 2-tier fallback (C++ engine + LLM-as-engine fallback via references/LLM-FALLBACK.md). v0.1.7 added the 11-slide HTML walkthrough, references/architecture.md, 3 idea docs, uninstall.ps1, and templates/episode_pattern.json. SKILL.md description rewritten in v0.1.6 to be capability-driven and universal; trigger conditions match observable prompt characteristics. Engine v0.1.7+ writes state to $env:VORTEX_HOME; engine v0.1.8+ groups deliverables by project name; skill v0.1.5+ auto-updates the engine every 6h (opt-out).",
   "verified": true,
-  "version": "0.3.0"
+  "version": "0.3.1"
 }

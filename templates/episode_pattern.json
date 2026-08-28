@@ -1,0 +1,37 @@
+{
+  "$schema": "./episode_pattern.schema.json",
+  "_comment": "Golden Path template for multi-episode narrative dispatches. The engine reads this file when --dispatch-template is passed, substitutes {{episode_number}}, {{episode_title}}, {{protagonist}}, {{antagonist}}, {{setting}}, {{diegetic_clock}}, and {{operator_choice}} from the previous episode's decision_history.json (when running episode >= 2), then dispatches the resulting master objective as if the user had typed it on the command line.",
+  "name": "episode_pattern",
+  "version": "1.0",
+  "objective_template": "Episode {{episode_number}} — {{episode_title}}\n\nProtagonist: {{protagonist}}\nAntagonist: {{antagonist}}\nSetting: {{setting}}\nDiegetic clock: {{diegetic_clock}}\n\nPrior operator decision: {{operator_choice}}\n\nDeliver the 7 canonical artifacts for this episode:\n  1. full script (.md)\n  2. character bible deltas (.json)\n  3. ambient soundscape (.wav)\n  4. portrait set for new characters (.png)\n  5. map delta for the new setting (.svg)\n  6. lore document (.md)\n  7. continuity audit log (.json)\n\nPreserve all prior episode continuity from the {{protagonist}} character bible and the {{setting}} world bible. Pay attention to the diegetic clock: every scene must reference where in the timeline this episode sits.\n\nIf this is episode 1, write the {{protagonist}} and {{antagonist}} character bibles from scratch in canonical format. If episode 2+, read decision_history.json and carry every prior operator decision forward.\n\nGate 2 (CRITICAL — moral hinge) MUST surface explicitly. The operator will be asked whether to deepen the {{protagonist}}'s peril at the midpoint. The {{antagonist}} may or may not learn about the correspondence — this is the operator's call, not the engine's.",
+  "substitutions": {
+    "episode_number": "1-based episode number (read from the dispatch flag or auto-incremented from state/decision_history.json)",
+    "episode_title": "Free-text title, e.g. 'The Letter That Wasn't Sealed'",
+    "protagonist": "Full name, e.g. 'Eira Vance, colonial archivist'",
+    "antagonist": "Full name, e.g. 'Director Hale, Internal Surveillance'",
+    "setting": "Setting name + region + era, e.g. 'Solstice Bay, Northern Reach, year 3147'",
+    "diegetic_clock": "Time anchor, e.g. '11 days after the seal was opened' or '48 hours before the convoy arrives'",
+    "operator_choice": "The most recent Gate 2 (CRITICAL) decision from state/decision_history.json, formatted as 'the operator chose: <deepen peril | hold the line | off-screen resolution>'. Empty string on episode 1."
+  },
+  "deliverables": [
+    {"slot": 1, "name": "script", "extension": ".md", "min_bytes": 8000, "description": "Full episode script. Must reference the diegetic clock in scene 1 and resolve (or escalate) the prior episode's dangling thread."},
+    {"slot": 2, "name": "character_bible_delta", "extension": ".json", "min_bytes": 400, "description": "New or changed character attributes for this episode. Carry forward unchanged characters from prior episodes verbatim."},
+    {"slot": 3, "name": "ambient_soundscape", "extension": ".wav", "min_bytes": 100000, "min_duration_seconds": 60, "description": "60-90 second ambient loop. Must include one signature sound (the {{setting}} equivalent of 'the lighthouse foghorn' or 'the colony's dawn bell')."},
+    {"slot": 4, "name": "portrait_set", "extension": ".png", "min_count": 1, "description": "At least one new portrait per new character introduced this episode. {{protagonist}} reuses prior portrait if unchanged."},
+    {"slot": 5, "name": "map_delta", "extension": ".svg", "min_bytes": 2000, "description": "SVG showing the new location. If {{setting}} is unchanged from prior episode, this can be a 'no-change' marker."},
+    {"slot": 6, "name": "lore_document", "extension": ".md", "min_bytes": 1500, "description": "In-world lore supporting this episode. Cross-link to the script and the map."},
+    {"slot": 7, "name": "continuity_audit_log", "extension": ".json", "min_bytes": 200, "description": "Per-rule pass/fail with citations back to the script. Written by the Continuity Engine."}
+  ],
+  "hitl_gates": [
+    {"gate": 1, "severity": "HIGH", "fires_after": "deliverable 1 (script) drafted", "ask": "Approve the script for media generation? (approve and continue pre-approves the rest of the routine gates)"},
+    {"gate": 2, "severity": "CRITICAL", "fires_after": "deliverables 1-6 drafted, before deliverable 7", "ask": "Moral hinge: should the {{antagonist}} learn about {{protagonist}}'s correspondence? (Deepen the peril / Hold the line / Off-screen resolution)"},
+    {"gate": 3, "severity": "HIGH", "fires_after": "all 7 deliverables complete", "ask": "Approve the final pack for delivery to $VORTEX_HOME/deliverables/{{project}}/? (Approving writes .manifest.json and freezes the deliverables)"}
+  ],
+  "self_heal_targets": [
+    "Tone drift (script suddenly formal where prior episodes were terse)",
+    "Anachronism (prop or phrase that doesn't fit the {{setting}} era)",
+    "Character contradiction ({{protagonist}} acts against an established trait from a prior episode)",
+    "Lore duplication (same fact stated twice with conflicting detail)",
+    "Map inconsistency (location described in script not present in map delta)"
+  ]
+}

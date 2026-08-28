@@ -16,7 +16,7 @@ flowchart TB
     Agent(["🤖 Code Agent<br/>(minimax code / hermes / etc.)"])
     Skill(["📦 VORTEX-OS Skill<br/>(PowerShell package)"])
     Engine(["⚙️ Vortex.dll<br/>(.NET 10 C++/CLI engine)"])
-    LLM(["🧠 LLM<br/>(writer / audio / image / code)"])
+    LLM(["🧠 LLM<br/>(writer / coder / researcher / analyst / data / media)"])
     State[("📁 VORTEX_HOME<br/>%APPDATA%\\Vortex-OS\\")]
     GitHub(["🌐 GitHub<br/>(vortex-os-dotnet releases)"])
 
@@ -26,7 +26,7 @@ flowchart TB
     GitHub -->|"Vortex.dll + .psm1 + .psd1 + ijwhost.dll"| Skill
     Skill -->|"Add-Type Vortex.dll"| Engine
     Engine -->|"dispatch to"| LLM
-    LLM -->|"output (prose, audio, image, code)"| Engine
+    LLM -->|"output (prose, code, research, data, media)"| Engine
     Engine -->|"writes audit + deliverables"| State
     Engine -->|"HITL gate"| Agent
     Agent -->|"Approve / Deny"| Engine
@@ -58,7 +58,7 @@ This is the core orchestration pattern. The engine decomposes a master objective
 
 ```mermaid
 flowchart TB
-    Obj(["📋 master objective<br/>(e.g. episode 2 script.md)"])
+    Obj(["📋 master objective<br/>(e.g. release_v2/objective.md)"])
     T0(["**T0** General Manager<br/><i>parse_objective</i>"])
     T1(["**T1** Store Supervisor<br/><i>macro_plan</i>"])
     T2(["**T2** Shift Supervisor<br/><i>decompose_to_workers</i>"])
@@ -68,6 +68,8 @@ flowchart TB
     T3a(["**T3** worker.audio"])
     T3i(["**T3** worker.image"])
     T3c(["**T3** worker.code"])
+    T3d(["**T3** worker.data"])
+    T3r(["**T3** worker.researcher"])
     T3p(["**T3** worker.packager<br/><i>(new in v0.1.9)</i>"])
     Del(("📁 deliverables/<br/>&lt;project&gt;/"))
 
@@ -78,6 +80,8 @@ flowchart TB
     T2 --> T3a
     T2 --> T3i
     T2 --> T3c
+    T2 --> T3d
+    T2 --> T3r
     T3w -.continuity violation.-> T2b
     T2b -.REJECT.-> T2c
     T2c -.hardened prompt.-> T3w
@@ -86,6 +90,8 @@ flowchart TB
     T3a --> T3p
     T3i --> T3p
     T3c --> T3p
+    T3d --> T3p
+    T3r --> T3p
     T3p --> Del
 
     classDef tier0 fill:#fadbd8,stroke:#922b21,color:#000
@@ -97,7 +103,7 @@ flowchart TB
     class T0 tier0
     class T1 tier1
     class T2,T2b,T2c tier2
-    class T3w,T3a,T3i,T3c,T3p tier3
+    class T3w,T3a,T3i,T3c,T3d,T3r,T3p tier3
     class Del,Obj out
 ```
 
@@ -107,7 +113,7 @@ Read top-to-bottom:
 - **T2** (Shift Supervisor) dispatches to T3 workers in parallel
 - **T2b** (Inspector) checks every worker output against the continuity rules; rejects on violation
 - **T2c** (Self-Healing Optimizer) rewrites the offending prompt with explicit constraints
-- **T3 workers** (writer / audio / image / code / packager) generate the deliverables
+- **T3 workers** (writer / audio / image / code / data / researcher / packager) generate the deliverables
 - **T3 packager** promotes the swarm's intermediate deliverables to the durable `deliverables/<project>/` location (new in v0.1.9)
 
 The self-heal loop (T3w → T2b → T2c → T3w) is what makes the engine "recover from LLM drift" without human intervention. See `references/INSTRUCTIONS.md` §4 for the operator-facing walkthrough.
@@ -128,14 +134,14 @@ flowchart LR
         SF5["SKILL.md / README.md / references/INSTRUCTIONS.md"]
         SF6["_meta.json / CHANGELOG.md / idea-*.md"]
         SF7["agents/<supervisor.store>.json<br/>agents/<supervisor.shift>.json<br/>agents/<inspector.governance>.json"]
-        SF8["templates/episode_pattern*.json<br/>(Golden Path, new in v0.1.9)"]
+        SF8["templates/iteration_pattern*.json<br/>(Golden Path, new in v0.1.9)"]
     end
 
     subgraph VH["📁 VORTEX_HOME (durable, survives skill updates)"]
         VH1["state/<br/>pending_approvals/<br/>auto-update-check.json<br/>decision_history.json<br/>inspector_interventions.log"]
         VH2["memory/<br/>audit.jsonl"]
         VH3["swarms/<br/>active_<id>/<br/>completed_<id>/"]
-        VH4["deliverables/<br/>&lt;project&gt;/<br/>  ├── scene1.md<br/>  ├── soundscape.wav<br/>  └── .manifest.json"]
+        VH4["deliverables/<br/>&lt;project&gt;/<br/>  ├── research_notes.md<br/>  ├── data_pipeline.py<br/>  ├── summary.pdf<br/>  └── .manifest.json"]
         VH5["tasks/"]
         VH6["deliverables/_unfiled/<br/>(legacy data from -AdoptFlat)"]
     end
@@ -216,30 +222,30 @@ sequenceDiagram
     participant H as HITL Gate
     participant D as $VORTEX_HOME/deliverables/
 
-    U->>A: "Build me a WebSim scene for..."
+    U->>A: "Build me a release readiness report for..."
     A->>S: pwsh -File skill.ps1 -Project foo --dispatch-master obj.md
     S->>V: Vortex.Skill::Run(skillRoot, args)
     V->>V: ResolveProjectName → "foo"
     V->>V: PathResolver::Resolve(skillDir, homeDir, "foo")
-    V->>W: spawn 6 T3 workers in parallel
+    V->>W: spawn N T3 workers in parallel
     W->>C: check output against continuity rules
     alt violation
-        C-->>SH: REJECT (e.g. "Keeper spoke a full sentence")
+        C-->>SH: REJECT (e.g. "dashboard drifted from the brand palette")
         SH->>W: re-dispatch with hardened prompt
         W->>C: check again
     end
-    C-->>H: PENDING_HUMAN (gate 1: script approval)
+    C-->>H: PENDING_HUMAN (gate 1: artifact draft approval)
     H->>A: surface gate to agent
-    A->>U: "VORTEX-OS wants approval for the script. Approve?"
+    A->>U: "VORTEX-OS wants approval for the draft. Approve?"
     U-->>A: "Approve"
     A->>S: pwsh -File skill.ps1 --hitl-approve <task_id>
     S->>V: Vortex.Skill::Run(... --hitl-approve <task_id>)
     V->>D: copy swarms/active_<id>/deliverables/* to deliverables/foo/
-    D-->>V: 7 files written
+    D-->>V: N files written
     V->>V: write deliverables/foo/.manifest.json
     V-->>H: PENDING_HUMAN (gate 2: final pack approval)
     H->>A: surface gate to agent
-    A->>U: "All 7 deliverables ready. Approve final pack?"
+    A->>U: "All N deliverables ready. Approve final pack?"
     U-->>A: "Approve"
     V->>D: deliverables/foo/ complete + .manifest.json updated
     D-->>U: open deliverables/foo/ in file explorer
@@ -294,12 +300,12 @@ stateDiagram-v2
     WorkersRunning --> ContinuityCheck: Inspector Governance
     ContinuityCheck --> SelfHeal: violation detected
     SelfHeal --> WorkersRunning: hardened prompt re-dispatch
-    WorkersRunning --> HITLScript: script gate (HIGH)
+    WorkersRunning --> HITLScript: artifact gate (HIGH)
     HITLScript --> WorkersRunning: user approves
     WorkersRunning --> HITLPack: final pack gate (HIGH)
     HITLPack --> Promoted: user approves
-    Promoted --> DurableState: deliverables/<project>/*.md
-    DurableState --> [*]: next project / next episode
+    Promoted --> DurableState: deliverables/<project>/*.*
+    DurableState --> [*]: next project / next iteration
 
     note right of DurableState
         Files here survive
@@ -332,7 +338,7 @@ flowchart TB
         UP["uninstall.ps1<br/>(clean removal)"]
         BP["build.ps1<br/>(source-build helper)"]
         AG["agents/*.json<br/>(3 supervisor/inspector manifests)"]
-        TP["templates/episode_pattern*.json<br/>(Golden Path, v0.1.9+)"]
+        TP["templates/iteration_pattern*.json<br/>(Golden Path, v0.1.9+)"]
         MJ["_meta.json<br/>(platform metadata)"]
         CH["CHANGELOG.md"]
         IDR["idea-future-recommendations.md"]
@@ -396,4 +402,4 @@ flowchart TB
 
 ---
 
-*Last updated: 2026-08-27. Current versions: `vortex-os-skill` v0.1.6, `vortex-os-dotnet` v0.1.8. New diagrams will be added when ADRs are added — keep them in sync.*
+*Last updated: 2026-08-28. Current versions: `vortex-os-skill` v0.3.1, `vortex-os-dotnet` v0.3.0. New diagrams will be added when ADRs are added — keep them in sync.*

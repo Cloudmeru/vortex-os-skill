@@ -127,7 +127,7 @@ subprocess.run([
 | 06 | Content | Two-tier storage keeps your work safe |
 | 07 | Content | From zero to first dispatch in one command |
 | 08 | Section divider | 03 — Dispatch & HITL |
-| 09 | Content | 3 gates, one moral hinge, no autopilot |
+| 09 | Content | 3 gates, one operator checkpoint, no autopilot |
 | 10 | Content | Continuity Engine + Self-Healing Optimizer |
 | 11 | Closing | What to try first |
 
