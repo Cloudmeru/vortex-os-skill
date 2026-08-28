@@ -4,6 +4,23 @@ All notable changes to the VORTEX-OS skill package are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.3.3] - 2026-08-28
+
+### Changed
+- **Shrunk the skill description** in `_meta.json` (~600 chars) and
+  `SKILL.md` frontmatter (~300 chars). The previous descriptions repeated
+  the long use-it / don't-use-it bullet lists that already live in
+  `trigger.when_to_use` and the "Trigger Conditions" section. The new
+  description is the minimum an agent needs to know what the skill is:
+  *self-bootstrapping PowerShell skill that drives the .NET 10 engine
+  to orchestrate multi-agent work pipelines with a 4-tier chain of
+  command, continuity enforcement, HITL approval, and per-agent audit
+  log; v0.3.0+ adds a cross-project memory layer.*
+
+### No behavioral change
+- Engine wiring, CLI commands, install flow, and all other files are
+  unchanged from v0.3.2.
+
 ## [0.3.2] - 2026-08-28
 
 ### Removed

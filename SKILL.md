@@ -5,50 +5,14 @@ version: 0.3.1
 description: |
   VORTEX-OS is a self-bootstrapping PowerShell skill that drives the
   [Cloudmeru/vortex-os-dotnet](https://github.com/Cloudmeru/vortex-os-dotnet)
-  .NET 10 C++/CLI engine to orchestrate multi-agent work pipelines with
-  strict continuity enforcement, self-healing prompts, and explicit
-  Human-in-the-Loop approval. The engine decomposes a master objective
-  into a 4-tier chain of command (planner → supervisor → shift →
-  specialized workers), runs the workers in parallel across distinct
-  domains (writing, audio, code, video, image, data, research, design,
-  etc.), auto-rewrites any prompt that violates a continuity rule, gates
-  high-stakes actions behind explicit human approval, and writes a
-  fully-attributed audit log (every action tied to a named agent, a
-  timestamp, and a status).
-
-  Engine v0.3.0+ adds a **cross-project memory layer**: every dispatch
-  leaves behind a per-project fingerprint, an operator (plugin) profile,
-  and an auto-detected series template (so a `q1` / `q2` / `ep1` / `ep2`
-  sequence can share context). The skill exposes these via
-  `Get-VortexMemory` and the engine flags `--compile-memory` /
-  `--memory-show`.
-
-  Trigger this skill when the user's request exhibits one or more of:
-    - multi-domain work (3+ distinct deliverable types in one pipeline:
-      writing + audio + code; research + analysis + viz; or
-      schema + migration + tests + docs, etc.)
-    - continuity / consistency requirements (entities, era, brand,
-      style, terminology, schema, API contract, code style, regulatory
-      constraints, or any rules that must survive across iterations)
-    - explicit Human-in-the-Loop approval on high-stakes actions
-      (publishing, packaging, writing to a protected directory, etc.)
-    - a per-agent audit trail (every decision attributable to a named
-      worker, with timestamp and outcome)
-    - long-running / multi-iteration / series scope (a project broken
-      into multiple runs, releases, episodes, or chapters that should
-      share context)
-    - cross-project context reuse (so a fresh dispatch on a new run of
-      a known project can pick up the prior operator profile + the
-      deliverable-type histogram instead of starting cold)
-    - in-house / offline execution (no external API dependencies
-      for the orchestration layer)
-
-  Do NOT trigger this skill for:
-    - simple one-line code questions
-    - pure chat / Q&A tasks
-    - single-file edits with no cross-domain coordination
-    - read-only research or web search
-    - tasks with no clear objective (ask the user for clarification first)
+  .NET 10 C++/CLI engine to orchestrate multi-agent work pipelines. The
+  engine decomposes a master objective into a 4-tier chain of command
+  (planner -> supervisor -> shift -> specialized workers), runs workers
+  in parallel across distinct domains, enforces continuity + contract
+  rules, gates high-stakes actions behind Human-in-the-Loop approval, and
+  writes a per-agent audit log. Engine v0.3.0+ adds a cross-project
+  memory layer so subsequent dispatches inherit context. Trigger
+  conditions are in the "Trigger Conditions" section below.
 author: MiniMax Agent
 license: MIT
 category: automation
