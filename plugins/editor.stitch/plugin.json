@@ -1,0 +1,39 @@
+{
+  "name": "editor.stitch",
+  "version": "0.1.0",
+  "author": "VORTEX-OS",
+  "license": "MIT",
+  "description": "Final-stage editor. Stitches N scene video clips with crossfades, mixes the per-scene voiceover tracks with a BGM track (with sidechain-style ducking under the voice), and writes the final MP4. The director.cinematic agent calls this once per dispatch as the packager step.",
+  "capability": "video",
+  "inputs": {
+    "scenes_manifest":  { "type": "string",  "required": true,  "description": "Absolute path to the scenes.json produced by scene-decomposer" },
+    "scene_video_dir":  { "type": "string",  "required": true,  "description": "Directory containing the per-scene video clips. Files are matched by basename from the manifest's deliverable_refs.video field." },
+    "scene_voice_dir":  { "type": "string",  "required": false, "description": "Directory containing per-scene voiceover WAVs. Files matched by deliverable_refs.voiceover basename." },
+    "bgm_file":         { "type": "string",  "required": false, "description": "Optional absolute path to a BGM track. If supplied, it's mixed under the voiceover at the volume_bgm_db level." },
+    "volume_voice_db":  { "type": "number",  "required": false, "default": 0,  "description": "dB offset for the voiceover track (0 = unity)" },
+    "volume_bgm_db":    { "type": "number",  "required": false, "default": -12, "description": "dB offset for the BGM track (default -12dB to sit under the voice)" },
+    "crossfade_s":      { "type": "number",  "required": false, "default": 0.5, "description": "Crossfade duration between scenes in seconds" },
+    "output":           { "type": "string",  "required": false, "description": "Absolute path for the final MP4. Defaults to $VORTEX_HOME/deliverables/<project>/<project>-final.mp4" }
+  },
+  "outputs": {
+    "file":       { "type": "string",  "description": "Absolute path to the final MP4" },
+    "duration_s": { "type": "number",  "description": "Total runtime of the assembled video" },
+    "scene_count":{ "type": "integer", "description": "Number of scenes stitched" },
+    "command":    { "type": "string",  "description": "The ffmpeg command that was run" }
+  },
+  "command": {
+    "type": "powershell",
+    "entry": "invoke.ps1",
+    "timeout_s": 900
+  },
+  "fallback_chain": {
+    "primary": {
+      "name": "ffmpeg",
+      "notes": "Local ffmpeg does the full job: concat with xfade filter, audio mix with volume controls."
+    },
+    "fallbacks": [
+      { "name": "ffmpeg-concat-no-transitions", "notes": "If the xfade filter fails (very old ffmpeg), fall back to a plain concat (no crossfades)." },
+      { "name": "local-placeholder-text",       "notes": "Last-ditch: write a placeholder text file at the output path so the contract is still satisfied (the engine will see it as an invalid mp4 and flag it in the audit log)." }
+    ]
+  }
+}

@@ -1,0 +1,66 @@
+{
+  "name": "director.cinematic",
+  "version": "0.1.0",
+  "author": "VORTEX-OS",
+  "license": "MIT",
+  "description": "Tier 2 cinematic director. The supervisor.store (T1) delegates long-form media productions to this agent when the master objective produces >5 scenes. Director.cinematic reads the source, calls scene-decomposer to produce a scene manifest + production bible, dispatches one worker batch per scene in parallel (hero image + voiceover + video clip per scene, all reading the production bible for character/palette/voice continuity), then calls editor.stitch to assemble the final MP4. The production bible is the single source of truth that every worker reads, so all clips share the same characters, palette, voice preset, and aspect ratio.",
+  "kind": "dynamic",
+  "tier": 2,
+  "inherits_from": ["supervisor.shift"],
+  "plugin_roster": [
+    { "plugin": "scene-decomposer",  "purpose": "Reads the source markdown / script and produces a JSON scene manifest + production bible under $VORTEX_HOME/state/<project>/production/.",  "when_to_dispatch": "Once, at the start of the dispatch, before any per-scene workers." },
+    { "plugin": "image-cover",      "purpose": "Per-scene hero image (still frame that anchors the scene's visual brief).",  "when_to_dispatch": "Once per scene, in parallel." },
+    { "plugin": "audio-voice",      "purpose": "Per-scene voiceover (the scene's spoken copy).",  "when_to_dispatch": "Once per scene, in parallel." },
+    { "plugin": "video-hailuo",     "purpose": "Per-scene cinematic video clip (Hailuo-2.3, 4-10s per scene, respects the scene's duration_s).",  "when_to_dispatch": "Once per scene, in parallel." },
+    { "plugin": "audio-music",      "purpose": "One BGM track for the whole project (sits under all voiceover at the editor's BGM volume).",  "when_to_dispatch": "Once, before editor.stitch." },
+    { "plugin": "editor.stitch",    "purpose": "Final assembly: xfade between scene clips, amix voiceover + BGM, write the final MP4.",  "when_to_dispatch": "Once, after all per-scene workers complete." }
+  ],
+  "dispatch_plan": {
+    "phase_1_decompose": {
+      "plugin": "scene-decomposer",
+      "outputs": ["$VORTEX_HOME/state/<project>/production/production_bible.json",
+                  "$VORTEX_HOME/state/<project>/production/scenes.json"]
+    },
+    "phase_2_per_scene_workers": {
+      "parallel": true,
+      "per_scene": [
+        { "plugin": "image-cover",  "reads": ["production_bible.json"], "writes": ["<scene_video_dir>/imgs/scene-NN-hero.png"] },
+        { "plugin": "audio-voice",  "reads": ["production_bible.json", "scenes.json"], "writes": ["<scene_voice_dir>/audio/scene-NN-voiceover.wav"] },
+        { "plugin": "video-hailuo", "reads": ["production_bible.json", "scenes.json"], "writes": ["<scene_video_dir>/video/scene-NN-clip.mp4"] }
+      ]
+    },
+    "phase_3_bgm": {
+      "plugin": "audio-music",
+      "reads": ["production_bible.json"],
+      "writes": ["$VORTEX_HOME/state/<project>/production/bgm.wav"]
+    },
+    "phase_4_assemble": {
+      "plugin": "editor.stitch",
+      "reads": ["scenes.json", "<scene_video_dir>/video/*.mp4", "<scene_voice_dir>/audio/*.wav", "bgm.wav"],
+      "writes": ["$VORTEX_HOME/deliverables/<project>/<project>-final.mp4"]
+    }
+  },
+  "continuity_rules_default": [
+    "Every per-scene worker MUST read production_bible.json before generating",
+    "Every visual_brief in scenes.json includes the palette hint verbatim (the LLM in scene-decomposer is instructed to do this; the director enforces it on read)",
+    "Every character appearing in multiple scenes uses the SAME description across all scenes (verified against production_bible.json on dispatch)",
+    "Every voiceover uses the voice preset from production_bible.json (default 'default')",
+    "Every video clip is at the aspect ratio from production_bible.json (default '16:9')",
+    "Crossfades between scenes use the transition_in field from each scene's manifest entry (default 'crossfade')",
+    "The director's HITL surface includes a Gate 2 (CRITICAL) before editor.stitch runs, so the operator can review the assembled storyboard + production bible before final assembly"
+  ],
+  "self_heal_targets": [
+    "Character drift (a character's visual description differs between scenes)",
+    "Palette drift (a visual_brief omits the palette hint)",
+    "Voice drift (a voiceover uses a different voice than production_bible.voice)",
+    "Aspect drift (a video clip is at a different aspect than production_bible.aspect)",
+    "Duration overrun (a scene's video clip is longer than scene.duration_s)"
+  ],
+  "default_hitl_gates": [
+    { "gate": 1, "severity": "HIGH",     "fires_after": "scene-decomposer returns the manifest", "ask": "Approve the scene manifest + production bible before per-scene workers run?" },
+    { "gate": 2, "severity": "CRITICAL", "fires_after": "all per-scene workers + BGM complete",     "ask": "Approve the assembled storyboard (heroes + voiceovers + clips) before final edit?" },
+    { "gate": 3, "severity": "HIGH",     "fires_after": "editor.stitch writes the final MP4",        "ask": "Approve the final pack for delivery to deliverables/<project>/?" }
+  ],
+  "reads": ["project_docs/master_objectives.md", "<source_markdown>"],
+  "writes": ["swarms/active_*/deliverables/", "deliverables/<project>/", "state/<project>/production/"]
+}

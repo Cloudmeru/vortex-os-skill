@@ -1,9 +1,9 @@
 {
   "name": "media-stack",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "author": "VORTEX-OS",
   "license": "MIT",
-  "description": "Tier 3 worker that bundles the 7 shipped media plugins (image, voice, music, video, ffmpeg) into one dispatchable roster. Use it for any multi-deliverable media production: tutorial videos, ad cuts, narrated slide decks, social clips, podcast covers, etc. The engine dispatches to individual plugins based on the master objective; this manifest is the named roster the LLM (or operator) references instead of writing one plugin per call.",
+  "description": "Tier 3 worker that bundles the 7 shipped media plugins (image, voice, music, video, ffmpeg) into one dispatchable roster. Use it for any multi-deliverable media production: tutorial videos, ad cuts, narrated slide decks, social clips, podcast covers, etc. The engine dispatches to individual plugins based on the master objective; this manifest is the named roster the LLM (or operator) references instead of writing one plugin per call. For long-form media (>=5 scenes, requires character continuity, palette consistency, or cross-scene transitions), the supervisor.store (T1) instead delegates to the director.cinematic (T2) agent which produces a scene manifest + production bible, dispatches per-scene workers in parallel, and calls editor.stitch to assemble the final video. media-stack is the right choice for slide-based, single-take, or short-form work; director.cinematic is the right choice for multi-scene cinematic work.",
   "kind": "dynamic",
   "tier": 3,
   "inherits_from": ["supervisor.shift"],
@@ -16,7 +16,8 @@
     "video_clip_generation",
     "video_motion_graphics",
     "media_assembly_ffmpeg",
-    "media_qa_continuity"
+    "media_qa_continuity",
+    "delegate_to_director_for_long_form"
   ],
   "invariants_compliant": ["I1", "I3", "I4", "I5", "I6"],
   "plugin_roster": [

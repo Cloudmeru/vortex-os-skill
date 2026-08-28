@@ -4,6 +4,62 @@ All notable changes to the VORTEX-OS skill package are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.3.6] - 2026-08-28
+
+### Added
+- **`agents/director.cinematic.json`** (NEW, 5.4 KB) -- Tier 2 supervisor
+  for multi-scene cinematic media. The supervisor.store (T1) delegates
+  long-form media productions (>=5 scenes, requires character continuity,
+  palette consistency, or cross-scene transitions) to this agent. The
+  director orchestrates: scene-decomposer (once, at the start) +
+  per-scene workers in parallel (image-cover + audio-voice + video-hailuo
+  per scene) + audio-music (one BGM) + editor.stitch (final assembly).
+  Carries a `production_bible.json` that every worker reads before
+  generating so all clips share the same characters, palette, voice,
+  and aspect. 5 self-heal targets (character drift, palette drift,
+  voice drift, aspect drift, duration overrun). 3 HITL gates
+  (manifest approval, storyboard approval, final pack approval).
+- **`plugins/scene-decomposer/`** (NEW, ~10 KB) -- LLM-powered scene
+  manifest producer. Reads the source markdown, calls the MiniMax
+  LLM (`Invoke-MiniMaxLLM`) to extract a structured JSON scene list
+  + production bible, falls back to a deterministic rule-based
+  splitter (H2 -> H3 -> blank-paragraph) when the LLM is offline.
+  Writes `$VORTEX_HOME/state/<project>/production/production_bible.json`
+  + `scenes.json` -- the contract every downstream worker reads.
+- **`plugins/editor.stitch/`** (NEW, ~11 KB) -- ffmpeg-based final
+  assembly. Stitches N scene video clips with xfade transitions
+  (per-scene `transition_in` honored), concatenates per-scene
+  voiceover tracks, mixes them with a BGM track at configurable
+  volume levels (default -12dB BGM under voiceover), writes the
+  final MP4 to `deliverables/<project>/<project>-final.mp4`. Falls
+  back to plain concat (no transitions) if the xfade filter
+  fails, then to a placeholder text file if ffmpeg is not on PATH.
+- **`templates/cinematic-short.json`** (NEW, 6.9 KB) -- Golden Path
+  recipe for "1 source markdown -> N scenes -> 1 assembled video"
+  (30s-3min). The natural evolution of `media-tutorial-video.json`:
+  use `media-tutorial-video` for slide-based single-take work; use
+  `cinematic-short` for multi-scene cinematic work. Same
+  mcode-tools -> fallback chain pattern as the v0.3.5 media plugins.
+- **New trigger-condition bullet in `_meta.json.trigger.when_to_use`
+  and SKILL.md "Trigger Conditions"**: "Multi-scene cinematic media"
+  -- so the LLM knows when to invoke `director.cinematic` instead of
+  `media-stack` (short-form / single-take vs long-form / multi-scene).
+- **New command-table row in SKILL.md** for the cinematic-short
+  recipe: `pwsh skill.ps1 --dispatch-template templates/cinematic-short.json`.
+
+### Changed
+- **`agents/media-stack.json`** version bumped to 0.2.0; description
+  now explains when `media-stack` is the right choice (slide-based,
+  single-take, short-form) vs when `director.cinematic` is the right
+  choice (multi-scene, long-form, with character continuity). The
+  capability list gains `delegate_to_director_for_long_form`.
+
+### No engine change
+- Engine v0.3.0 is still the minimum version; v0.3.6 is skill-side
+  only. The director + editor pattern is a plugin + agent
+  composition that the existing engine already supports via the
+  plugin manifest + dispatch flow.
+
 ## [0.3.5] - 2026-08-28
 
 ### Added

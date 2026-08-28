@@ -1,0 +1,39 @@
+{
+  "name": "scene-decomposer",
+  "version": "0.1.0",
+  "author": "VORTEX-OS",
+  "license": "MIT",
+  "description": "Reads a source document (markdown / script / brief) and produces a structured scene manifest + production bible. The T1 director.cinematic calls this once per dispatch. Falls back to a rule-based H2-heading splitter when the LLM is unavailable.",
+  "capability": "text",
+  "inputs": {
+    "source_markdown":  { "type": "string",  "required": true,  "description": "Absolute path to the source markdown / script file" },
+    "title":            { "type": "string",  "required": false, "description": "Project title (defaults to the source filename without extension)" },
+    "target_duration_s":{ "type": "integer", "required": false, "default": 60, "description": "Target total duration in seconds. The decomposer will produce enough scenes to hit this." },
+    "max_scene_s":      { "type": "integer", "required": false, "default": 8,  "description": "Max duration of any one scene (Hailuo-2.3 caps at 10s; H3 at 15s; default 8 leaves headroom)" },
+    "aspect":           { "type": "string",  "required": false, "default": "16:9", "enum": ["16:9", "9:16", "1:1"] },
+    "style":            { "type": "string",  "required": false, "default": "cinematic" },
+    "palette":          { "type": "string",  "required": false, "default": "cool teal and warm amber, low contrast" },
+    "voice":            { "type": "string",  "required": false, "default": "default" },
+    "characters":       { "type": "string",  "required": false, "description": "Optional pre-defined character descriptions, one per line, format: 'name | description | voice'" }
+  },
+  "outputs": {
+    "manifest_path":    { "type": "string",  "description": "Absolute path to the production_bible.json + scenes.json written under the project's state dir" },
+    "scene_count":      { "type": "integer", "description": "Number of scenes produced" },
+    "total_duration_s": { "type": "integer", "description": "Sum of scene durations" },
+    "provider":         { "type": "string",  "description": "Which path produced the manifest: 'minimax-llm' (primary) or 'rule-based' (fallback)" }
+  },
+  "command": {
+    "type": "powershell",
+    "entry": "invoke.ps1",
+    "timeout_s": 180
+  },
+  "fallback_chain": {
+    "primary": {
+      "name": "minimax-llm",
+      "notes": "MiniMax Text-01 via the SDK's Invoke-MiniMaxLLM helper. The LLM is given the source + target_duration + max_scene + aspect + style + palette + characters and asked to return a JSON scene list + production bible."
+    },
+    "fallbacks": [
+      { "name": "rule-based", "notes": "Splits the source on H2 headings, then on H3 if there are no H2s, then on blank-line paragraphs if there are no H3s. Each section becomes one scene at max_scene_s. Character / palette / style inputs are honored verbatim." }
+    ]
+  }
+}

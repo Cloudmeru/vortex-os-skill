@@ -1,7 +1,7 @@
 ---
 name: VORTEX-OS
 display_name: VORTEX-OS - Multi-Agent Orchestration Engine
-version: 0.3.5
+version: 0.3.6
 description: |
   VORTEX-OS is a self-bootstrapping PowerShell skill that drives the
   [Cloudmeru/vortex-os-dotnet](https://github.com/Cloudmeru/vortex-os-dotnet)
@@ -108,6 +108,15 @@ the 4-line install contract, read [`COMPATIBILITY.md`](./COMPATIBILITY.md).
   narrated slide deck, social clip): N slides + voiceover per slide
   + BGM + final MP4. Use the `media-stack` agent + the
   `media-tutorial-video` recipe in `templates/`.
+- **Multi-scene cinematic media** — one source markdown / script
+  becoming a finished cinematic video (short film, narrative ad,
+  product launch trailer, brand story, social short) that requires
+  character continuity, palette consistency, and cross-scene
+  transitions across N short clips (Hailuo-2.3 caps at 10s/clip;
+  H3 caps at 15s/clip). Use the `director.cinematic` agent + the
+  `cinematic-short` recipe in `templates/`. The director produces
+  a scene manifest + production bible so every per-scene worker
+  shares the same characters, palette, voice, and aspect.
 - **Hierarchical task decomposition** — the user wants a complex
   objective broken into a 4-tier chain of command (planner →
   supervisor → shift → workers) rather than a single LLM call
