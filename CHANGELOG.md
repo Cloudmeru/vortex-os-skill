@@ -4,6 +4,32 @@ All notable changes to the VORTEX-OS skill package are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.3.8] - 2026-08-28
+
+### Changed
+- **Pinned the minimum engine version at v0.3.5.** The skill v0.3.0-v0.3.7
+  release notes claimed `--memory-show`, `--compile-memory`, and the
+  cross-project memory compiler shipped in engine v0.3.0; in fact those
+  CLI commands and the Memory::ReadForInjection slice were added in
+  engine v0.3.0 but the template walker that the v0.3.4-v0.3.7 skill
+  features (media-stack, director.cinematic, cinematic-short, reviewer.quality)
+  depend on was never shipped until engine v0.3.5. Skill v0.3.8 makes
+  this dependency explicit: `--recipe <name>`, the agent_roster template
+  walker, and the reviewer invocation gate now require engine v0.3.5+.
+- **`_meta.json` `verification_status`** updated to document the engine
+  v0.3.5 dependency and the corrected scope of the v0.3.4-v0.3.7 features.
+- **SKILL.md frontmatter version** bumped to 0.3.8.
+
+### No new skill features
+- This is a dependency-pinning release. The skill v0.3.7 functionality
+  is unchanged. The new behavior is in the engine, not the skill.
+
+### Engine dependency
+- [vortex-os-dotnet v0.3.5](https://github.com/Cloudmeru/vortex-os-dotnet/releases/tag/v0.3.5)
+  adds the --recipe shortcut, the agent_roster template walker, and
+  the reviewer invocation gate. Skill v0.3.4-v0.3.7 features assume
+  these are present.
+
 ## [0.3.7] - 2026-08-28
 
 ### Added
