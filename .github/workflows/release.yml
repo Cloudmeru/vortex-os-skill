@@ -9,12 +9,22 @@ name: Release (zip)
 # The engine attaches 4 binaries; the skill ships as source files
 # (PowerShell scripts + manifests) so a single zip is the natural
 # artifact. install.ps1 inside the zip is the install entry point.
+#
+# Both triggers supported:
+#   - tag push (auto on `git push origin vX.Y.Z`)
+#   - workflow_dispatch (manual from the Actions tab; provide
+#     `tag` input like `v0.3.0`)
 
 on:
   push:
     tags:
       - 'v*'
   workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to publish (e.g. v0.3.0). Must already exist on the remote.'
+        required: true
+        default: 'v0.3.0'
 
 # Default GITHUB_TOKEN is read-only. Need write to create releases
 # and attach assets.
@@ -29,18 +39,21 @@ jobs:
       - name: Check out source
         uses: actions/checkout@v4
 
-      # 1. Derive the version from the tag (strip the leading 'v').
-      - name: Determine version
+      # 1. Derive the version + tag.
+      #    - On tag push: github.ref_name is the tag ("vX.Y.Z")
+      #    - On workflow_dispatch: inputs.tag provides it
+      - name: Determine tag + version
         id: get_version
         run: |
-          if [ "${{ github.ref_type }}" = "tag" ]; then
-            VERSION="${{ github.ref_name }}"
+          if [ "${{ github.event_name }}" = "push" ]; then
+            TAG="${{ github.ref_name }}"
           else
-            VERSION="v0.0.0"
+            TAG="${{ inputs.tag }}"
           fi
-          VERSION="${VERSION#v}"
+          VERSION="${TAG#v}"
+          echo "tag=$TAG"     >> "$GITHUB_OUTPUT"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          echo "Building release for $VERSION"
+          echo "Building release for tag=$TAG version=$VERSION"
 
       # 2. Zip the skill folder. Exclude:
       #    - .git/                     (the git directory itself)
@@ -51,8 +64,7 @@ jobs:
       #    - *.bak, *.orig, *.tmp      (misc backups)
       - name: Zip the skill
         run: |
-          VERSION="${{ steps.get_version.outputs.version }}"
-          OUT="vortex-os-skill-v${VERSION}.zip"
+          OUT="vortex-os-skill-${{ steps.get_version.outputs.tag }}.zip"
           zip -r "$OUT" . \
             -x '.git/*' \
             -x '.vortex/*' \
@@ -66,13 +78,23 @@ jobs:
           echo "Wrote $OUT:"
           unzip -l "$OUT" | head -20
 
-      # 3. Create the GitHub Release with the zip attached.
+      # 3. Create the GitHub Release. We use `gh release create` instead
+      #    of softprops/action-gh-release@v2 because the latter refuses
+      #    to run on workflow_dispatch ("GitHub Releases requires a tag").
+      #    `gh release create` accepts a --target ref and works for
+      #    both triggers.
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          name: "VORTEX-OS skill ${{ steps.get_version.outputs.version }}"
-          generate_release_notes: true
-          files: |
-            vortex-os-skill-v${{ steps.get_version.outputs.version }}.zip
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ steps.get_version.outputs.tag }}"
+          ZIP="vortex-os-skill-${{ steps.get_version.outputs.tag }}.zip"
+          # --generate-notes fills the body from PRs + commits
+          # --draft first so a failure doesn't leave a half-made release
+          # then publish to flip from draft to released.
+          gh release create "$TAG" \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "VORTEX-OS skill ${{ steps.get_version.outputs.version }}" \
+            --generate-notes \
+            --target "${{ github.sha }}" \
+            "$ZIP"

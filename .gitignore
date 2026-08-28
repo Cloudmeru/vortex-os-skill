@@ -69,3 +69,7 @@ state/auto-update-check.json
 
 walkthrough/slides/imgs/_gen_*.json
 
+
+# Release artifacts (built by .github/workflows/release.yml)
+*.zip
+
