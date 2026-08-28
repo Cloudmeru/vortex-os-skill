@@ -296,6 +296,8 @@ Currently, each project lives in its own `deliverables/<project>/` subfolder and
 
 **Effort:** ~1 quarter. Genuinely hard problem.
 
+**PRD:** [`docs/prd-phase3/prd-17-cross-project-memory-lore.md`](docs/prd-phase3/prd-17-cross-project-memory-lore.md) (added 2026-08-28). Builds on phase 2 (audit + cost + per-project meta). Reads existing data sources, writes `memory/lore/{project,series,calibration}.json`. New CLI: `--compile-lore`. New cmdlet: `Get-VortexLore`. New dispatch flag: `--with-lore`.
+
 ---
 
 ### 18. Web-based audit-trail browser ⚪
@@ -374,6 +376,7 @@ Recommendation: keep per-user for v1.0. Multi-team is a v2+ problem.
 2. **When triaging issues:** the "Specific gaps" table is a starter backlog. Add to it as you find more.
 3. **When reviewing architectural choices:** the "Open questions" section is the design-decision queue. Resolve one before you start a major feature.
 4. **When looking for a contributor project:** the "Mid-term" and "Long-term" sections are project-sized, well-scoped ideas. A new contributor can pick one up.
+5. **When the items above get a PRD:** each item links to its PRD in `docs/prd-phase2/` (phase 2, 6 PRDs) or `docs/prd-phase3/` (phase 3, 1 PRD so far). Read the PRD before implementation -- the design + open questions are the ground truth.
 
 This document should be reviewed and updated on every minor release (v0.x.0). The TL;DR section is the priority list; everything else is context.
 
