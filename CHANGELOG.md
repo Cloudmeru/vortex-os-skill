@@ -4,6 +4,31 @@ All notable changes to the VORTEX-OS skill package are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.3.0] - 2026-08-28
+
+### Added
+- **`Get-VortexMemory` cmdlet** in `Vortex.psm1` -- browse the
+  cross-project memory store. `-Project <slug>` returns one project's
+  fingerprint, `-Series <name>` returns a series template, `-Operator`
+  returns the global profile. `-As detail` prints the full JSON,
+  `-As json` returns the raw string for `ConvertFrom-Json`.
+- **`skill.ps1` help text** now lists the new MEMORY section
+  (`--compile-memory`, `--memory-show`). The `--compile-memory`
+  flag is passed through to the engine; the skill side just adds the
+  "Up to date" check.
+
+### Changed
+- **No behavioral change** to the skill routing for v0.3.0. The
+  `--with-memory` dispatch flag is deferred to v0.3.1 (needs the
+  prompt-construction wiring in DispatchV4).
+
+### Engine dependency
+- Requires [vortex-os-dotnet v0.3.0](https://github.com/Cloudmeru/vortex-os-dotnet/releases/tag/v0.3.0)
+  which ships the `lib/Memory.{h,cpp}` compiler, the
+  `--compile-memory` + `--memory-show` CLI commands, and the
+  `Memory::ReadForInjection` slice for the future `--with-memory`
+  prompt integration.
+
 ## [0.2.3] - 2026-08-28
 
 ### Added

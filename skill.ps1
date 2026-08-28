@@ -37,7 +37,6 @@ param(
 
     [switch] $Force,
 
-<<<<<<< Updated upstream
     # Audit viewer output format. Only consulted when --audit-trail is in
     # $Arguments. Pulled out of $Arguments below (after param binding) so
     # we don't expose it as a wrapper param — that would let PowerShell
@@ -52,20 +51,6 @@ param(
     # Callers set the project via $env:VORTEX_PROJECT (or by passing
     # --project=foo directly to the engine, which survives the
     # [ValueFromRemainingArguments] pass-through below).
-=======
-    [string] $AuditFormat = 'table',
-
-    # NOTE: We intentionally do NOT declare a `$Project` parameter here. If
-    # we did, PowerShell would auto-bind the engine's `--project <name>` flag
-    # to it (PowerShell is case- and dash-insensitive when matching parameter
-    # names), which would prevent the engine from ever seeing the user's
-    # project name. The project name is instead set via $env:VORTEX_PROJECT
-    # before invoking the script, e.g.:
-    #   $env:VORTEX_PROJECT = 'trial_of_echoes'
-    #   pwsh -NoProfile -File .\skill.ps1 --dispatch-master objectives\ep1.md
-    # The engine reads $env:VORTEX_PROJECT in its ResolveProjectName()
-    # function (see skill.cpp).
->>>>>>> Stashed changes
 
     # All other args (the engine args) are captured here.
     [Parameter(ValueFromRemainingArguments = $true)]
@@ -114,12 +99,7 @@ function Show-Tier2Banner {
 
 # --- 0. Env setup -------------------------------------------------------------
 $env:VORTEX_SKILL_ROOT = $here
-<<<<<<< Updated upstream
 # (Project is no longer a wrapper param — see the top-of-file note.)
-=======
-# (No wrapper-level $Project: see the param block comment. The engine reads
-# $env:VORTEX_PROJECT via ResolveProjectName().)
->>>>>>> Stashed changes
 
 # --- 0a. PS7+ guard -----------------------------------------------------------
 if ($PSVersionTable.PSEdition -ne 'Core' -or $PSVersionTable.PSVersion.Major -lt 7) {
@@ -450,6 +430,9 @@ if ($Arguments -and (
 # v0.1.11: short-circuit --audit-trail to use the PowerShell-side viewer
 # (lib/Vortex.AuditViewer.psm1). This avoids the engine's basic --audit-trail
 # output being mixed with the rich viewer's output.
+# v0.3.0 (PRD-17): --compile-memory runs the engine and prints a one-line
+# summary. --memory-show <slug> prints the prior-projects-context slice
+# that --with-memory would inject into the next dispatch.
 if ($Arguments.Count -ge 1 -and $Arguments[0] -eq '--audit-trail') {
     $viewerPath = Join-Path $here 'lib\Vortex.AuditViewer.psm1'
     if (Test-Path $viewerPath) {
