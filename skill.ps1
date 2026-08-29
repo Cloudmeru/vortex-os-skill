@@ -101,6 +101,73 @@ function Show-Tier2Banner {
 $env:VORTEX_SKILL_ROOT = $here
 # (Project is no longer a wrapper param — see the top-of-file note.)
 
+# v0.3.7 (G22): the engine's CWD after `Import-Module Vortex` is the Vortex
+# module folder, not the skill folder. When the user passes a relative
+# template path like `templates\iteration_pattern.json`, the engine's
+# File::Exists check fails and it bails with "Usage: skill.exe ...". We
+# pre-resolve relative path args against the skill folder here so the
+# engine receives absolute paths regardless of the current CWD.
+#
+# Path-accepting flags we know about:
+#   --dispatch-template <file>     template JSON (relative or absolute)
+#   --dispatch-master   <file>     master objective markdown
+#   --source <file> / --source-file <file>   used by --recipe
+#   --plugin-test --input <file>   plugin test input
+#   --plugin-invoke --input <file> plugin invoke input
+#   --agents-validate <file>       agent manifest to validate
+function Resolve-RelativeSkillPath([string]$Path) {
+    if ([string]::IsNullOrEmpty($Path)) { return $Path }
+    if ([System.IO.Path]::IsPathRooted($Path)) { return $Path }
+    $resolved = Join-Path $here $Path
+    if (Test-Path -LiteralPath $resolved) { return $resolved }
+    # Fall back to the literal arg; engine will produce the proper "not
+    # found" error if it really is missing.
+    return $Path
+}
+
+# Flags that take a path as their next positional arg. For each, if the
+# next arg is a relative path, resolve it against the skill folder.
+$pathFlags = @('--dispatch-template', '--dispatch-master', '--source', '--source-file', '--agents-validate')
+# Flags that take a path AFTER a --input subflag.
+$inputFlags = @('--plugin-test', '--plugin-invoke')
+if ($Arguments) {
+    $resolved = New-Object System.Collections.Generic.List[string]
+    $i = 0
+    while ($i -lt $Arguments.Count) {
+        $a = $Arguments[$i]
+        $resolved.Add($a)
+        if ($pathFlags -contains $a -and ($i + 1) -lt $Arguments.Count) {
+            $resolved.Add((Resolve-RelativeSkillPath $Arguments[$i + 1]))
+            $i += 2
+            continue
+        }
+        if ($inputFlags -contains $a) {
+            # Walk forward; if the next token is --input, resolve the token
+            # after it as a path.
+            for ($j = $i + 1; $j -lt $Arguments.Count; $j++) {
+                $resolved.Add($Arguments[$j])
+                if ($Arguments[$j] -eq '--input' -and ($j + 1) -lt $Arguments.Count) {
+                    $resolved.Add((Resolve-RelativeSkillPath $Arguments[$j + 1]))
+                    $i = $j + 1
+                    break
+                }
+            }
+            $i++
+            continue
+        }
+        $i++
+    }
+    $Arguments = $resolved.ToArray()
+    # v0.3.7 (G22): also fix the dotnet CurrentDirectory so the engine's
+    # own relative-path resolution (e.g. reading production_bible.json
+    # from the project state dir) works as expected. Without this, the
+    # engine sees the Vortex module folder as CWD, which is why
+    # Plugin.cpp's `Path::Combine(pluginDir, entry)` is fine (pluginDir
+    # is absolute) but the production_bible lookup at the executor
+    # level would not be.
+    $env:VORTEX_SKILL_ROOT = $here
+}
+
 # --- 0a. PS7+ guard -----------------------------------------------------------
 if ($PSVersionTable.PSEdition -ne 'Core' -or $PSVersionTable.PSVersion.Major -lt 7) {
     throw "VORTEX-OS requires PowerShell 7+ (Core). Detected: $($PSVersionTable.PSVersion) ($($PSVersionTable.PSEdition)). Install from https://aka.ms/powershell"
