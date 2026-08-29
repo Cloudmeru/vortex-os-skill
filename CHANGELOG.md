@@ -4,6 +4,51 @@ All notable changes to the VORTEX-OS skill package are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.3.10] - 2026-08-29
+
+### Fixed (v0.3.7 gap-closure round)
+- **`install.ps1:104` referenced undefined `$vortexHome`.** The v0.3.9
+  fix was incomplete -- it set `$env:VORTEX_HOME` but line 104 still
+  used the un-prefixed name. Fixed: line 104 now uses `$env:VORTEX_HOME`.
+  Closes G21 from the v0.3.7 gap analysis.
+- **`skill.ps1` could not forward relative paths.** After
+  `Import-Module Vortex`, the .NET CurrentDirectory was the Vortex
+  module folder, not the skill folder, so the engine's `File::Exists`
+  on the relative template path returned false. Fixed: `skill.ps1`
+  now pre-resolves relative path args against the skill folder before
+  forwarding them. Closes G22.
+- **`plugin-sdk/Vortex.Plugin.psm1:328` had a `$status:` parse
+  error.** The PowerShell parser interpreted `$status:` as a
+  scope-qualified variable and refused to compile the SDK, which
+  silently broke EVERY plugin invocation. Fixed: `${status}` to
+  delimit the variable name. The new G25 test parse-checks the
+  SDK + every plugin before shipping.
+
+### Tests
+- **G21 in test_engine.ps1 no longer clobbers the live agent
+  manifests.** The previous version wrote 1-line stubs to
+  `agents/media-stack.json` and `agents/reviewer.quality.json`
+  and never restored them. Now: snapshot the live manifests at
+  the start of the test, write stubs, run, restore in a `finally`.
+  Closes G9.
+- **New `tests/test_v0_3_7.ps1` -- 5 focused tests for the
+  v0.3.7 acceptance gates** (install.ps1 + relative path + SDK
+  parse check).
+- **New `tests/test_executor.ps1` -- 4 focused tests for
+  CmdDispatchAgentRoster** (plugin invoked + plugin_invoke in
+  audit + file in deliverables/ + swarm_close audit).
+
+### Notes
+This release ships the v0.3.7 **acceptance tests** for the
+executor fix. The actual engine code that closes G1-G4
+(CmdDispatchAgentRoster + CmdDispatchTemplate wiring) is in
+[vortex-os-dotnet v0.3.7](https://github.com/Cloudmeru/vortex-os-dotnet/releases/tag/v0.3.7).
+The v0.3.6 / v0.3.7 skill features (media-stack, director.cinematic,
+cinematic-short, reviewer.quality, media-tutorial-video) are
+**not end-to-end runnable on engine v0.3.6 or earlier** -- the
+skill relies on engine v0.3.7+ to actually invoke the plugin
+roster.
+
 ## [0.3.9] - 2026-08-28
 
 ### Fixed

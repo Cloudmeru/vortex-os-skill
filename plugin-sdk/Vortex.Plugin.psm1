@@ -325,7 +325,10 @@ function Invoke-VortexMcodeConnectorAsync {
             return @{ success_items = $items; raw = $resp }
         }
         if ($status -eq 'failed' -or $status -eq 'cancelled') {
-            throw "Async task $taskId ended in status=$status: $($resp | ConvertTo-Json -Compress)"
+            # v0.3.7: `${status}` to escape the colon -- otherwise PowerShell
+            # parses `$status:` as a scope-qualified variable and refuses to
+            # compile the script.
+            throw "Async task $taskId ended in status=${status}: $($resp | ConvertTo-Json -Compress)"
         }
     }
     throw "Async task $taskId did not complete within ${MaxWaitSec}s"

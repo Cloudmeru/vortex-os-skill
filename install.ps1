@@ -101,7 +101,13 @@ $apiBase = "https://api.github.com/repos/$RepoOwner/$RepoName/releases"
 # 6h would re-resolve 3 times. We now read the cache; if last_check is
 # within IntervalHours (default 6) and the cached remote_tag matches the
 # version we want, we skip the GitHub call. Pass -Force to bypass.
-$cacheFile = Join-Path $vortexHome 'state\auto-update-check.json'
+#
+# v0.3.7: also fixed G21 -- the v0.3.9 line below used to reference
+# the undefined local $vortexHome, throwing "Cannot bind argument to
+# parameter 'Path' because it is null" on the very first install. The
+# v0.3.9 fix on line 53-55 only set $env:VORTEX_HOME; this line still
+# used the un-prefixed name. Both are now consistent.
+$cacheFile = Join-Path $env:VORTEX_HOME 'state\auto-update-check.json'
 $cache = $null
 if (Test-Path $cacheFile) {
     try { $cache = Get-Content $cacheFile -Raw | ConvertFrom-Json } catch { }
