@@ -578,6 +578,15 @@ function New-VortexSilentWav {
 .SYNOPSIS
     Write a silent WAV file at $OutFile with the given duration. The audio
     fallback for any TTS / music / foley plugin.
+
+    v0.3.11.1: the WAV now contains the actual silent audio samples
+    (zeros) for the requested duration, not just a 44-byte header
+    claiming 0 data bytes. The previous version made the test
+    `wav file is larger than 100 bytes` (G-equivalent for the audio
+    plugin) fail on hosts without ffmpeg. The header chunk sizes
+    and the RIFF file size are computed from the actual sample count
+    so any consumer (ffprobe, PowerShell `Get-Item`, browsers) can
+    read the duration from the file.
 #>
     [CmdletBinding()]
     param(
@@ -587,19 +596,50 @@ function New-VortexSilentWav {
     )
     $dir = Split-Path -Parent $OutFile
     if ($dir -and -not (Test-Path $dir)) { New-Item -ItemType Directory -Path $dir -Force | Out-Null }
-    $header = [System.Text.Encoding]::ASCII.GetBytes('RIFF')
-    $header += [System.BitConverter]::GetBytes(36)
-    $header += [System.Text.Encoding]::ASCII.GetBytes('WAVEfmt ')
-    $header += [System.BitConverter]::GetBytes(16)
-    $header += [System.Text.Encoding]::ASCII.GetBytes([char]1) + [System.Text.Encoding]::ASCII.GetBytes([char]0)
-    $header += [System.BitConverter]::GetBytes(1)
-    $header += [System.BitConverter]::GetBytes($SampleRate)
-    $header += [System.BitConverter]::GetBytes($SampleRate * 2)
-    $header += [System.Text.Encoding]::ASCII.GetBytes([char]2) + [System.Text.Encoding]::ASCII.GetBytes([char]0)
-    $header += [System.Text.Encoding]::ASCII.GetBytes([char]16) + [System.Text.Encoding]::ASCII.GetBytes([char]0)
-    $header += [System.Text.Encoding]::ASCII.GetBytes('data')
-    $header += [System.BitConverter]::GetBytes(0)
-    [System.IO.File]::WriteAllBytes($OutFile, $header)
+
+    # 16-bit mono PCM at $SampleRate. dataBytes = samples * 2 (16-bit).
+    $sampleCount = [int]($SampleRate * $DurationSec)
+    $dataBytes = $sampleCount * 2
+    $fileSize = 36 + $dataBytes   # RIFF chunk size excludes the 8-byte RIFF header
+
+    $ms = New-Object System.IO.MemoryStream
+    $bw = New-Object System.IO.BinaryWriter($ms)
+    try {
+        # RIFF header
+        $bw.Write([System.Text.Encoding]::ASCII.GetBytes('RIFF'))
+        $bw.Write([int32]$fileSize)
+        $bw.Write([System.Text.Encoding]::ASCII.GetBytes('WAVE'))
+
+        # fmt sub-chunk
+        $bw.Write([System.Text.Encoding]::ASCII.GetBytes('fmt '))
+        $bw.Write([int32]16)                        # fmt chunk size
+        $bw.Write([int16]1)                         # PCM
+        $bw.Write([int16]1)                         # mono
+        $bw.Write([int32]$SampleRate)               # sample rate
+        $bw.Write([int32]($SampleRate * 2))         # byte rate (16-bit mono)
+        $bw.Write([int16]2)                         # block align (2 bytes per sample)
+        $bw.Write([int16]16)                        # bits per sample
+
+        # data sub-chunk
+        $bw.Write([System.Text.Encoding]::ASCII.GetBytes('data'))
+        $bw.Write([int32]$dataBytes)
+
+        # Write the actual silent samples (zeros) in 64KB chunks.
+        # For a 2-second clip at 22050 Hz mono 16-bit: 88,200 bytes.
+        $chunk = New-Object byte[] 65536
+        $remaining = $dataBytes
+        while ($remaining -gt 0) {
+            $toWrite = [Math]::Min($chunk.Length, $remaining)
+            $bw.Write($chunk, 0, $toWrite)
+            $remaining -= $toWrite
+        }
+
+        $bw.Flush()
+        [System.IO.File]::WriteAllBytes($OutFile, $ms.ToArray())
+    } finally {
+        $bw.Dispose()
+        $ms.Dispose()
+    }
     return @{ file = $OutFile; duration_s = $DurationSec; format = 'wav'; provider = 'local-silent' }
 }
 
