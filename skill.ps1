@@ -368,7 +368,13 @@ if ($Arguments) {
         throw "--AuditFormat must be one of: table, tree, selfheal, hitl, json, html (got '$AuditFormat')"
     }
 }
-if ($Arguments -and ($Arguments -contains '--audit-trail')) {
+if ($Arguments -and ($Arguments -contains '--audit-trail') -and -not ($Arguments -contains '--json')) {
+    # v0.3.11.2 (bug fix): when --json is present, skip the audit-viewer
+    # short-circuit (same fix as the second --audit-trail short-circuit
+    # at line ~509). The engine's CmdAuditTrail --json path produces
+    # a single-line JSON object per docs/cli-json-contract.md. The
+    # viewer's --Format json path emits ConvertTo-Json -Depth 5 which
+    # is multi-line pretty-printed (the OPPOSITE of the contract).
     $viewer = Join-Path $here 'lib\Vortex.AuditViewer.psm1'
     if (-not (Test-Path $viewer)) {
         Write-Host "ERROR: audit viewer module missing at $viewer" -ForegroundColor Red
@@ -447,7 +453,13 @@ if ($Arguments -and (
     ($Arguments | Where-Object { $_ -like '--stream' -or $_ -like '--stream=*' }) -or
     $Arguments -contains '--stream-stop' -or
     ($Arguments | Where-Object { $_ -like '--hint' -or $_ -like '--hint=*' })
-)) {
+) -and -not ($Arguments -contains '--json')) {
+    # v0.3.11.2 (bug fix): when --json is present, skip the streamer
+    # short-circuit entirely. The engine's CmdStreamList --json path
+    # already produces a single-line JSON object per
+    # docs/cli-json-contract.md, and routing through the streamer would
+    # either strip --json (the pre-v0.3.11.2 bug) or emit rich
+    # presentation text that the JSON contract forbids.
     $streamerPath = Join-Path $here 'lib\Vortex.Streamer.psm1'
     if (-not (Test-Path $streamerPath)) {
         Write-Host "ERROR: streaming module missing at $streamerPath" -ForegroundColor Red
@@ -500,7 +512,15 @@ if ($Arguments -and (
 # v0.3.0 (PRD-17): --compile-memory runs the engine and prints a one-line
 # summary. --memory-show <slug> prints the prior-projects-context slice
 # that --with-memory would inject into the next dispatch.
-if ($Arguments.Count -ge 1 -and $Arguments[0] -eq '--audit-trail') {
+if ($Arguments.Count -ge 1 -and $Arguments[0] -eq '--audit-trail' -and -not ($Arguments -contains '--json')) {
+    # v0.3.11.2 (bug fix): when --json is present, skip the audit-viewer
+    # short-circuit. The engine's CmdAuditTrail --json path produces a
+    # single-line JSON object per docs/cli-json-contract.md. The
+    # viewer's --Format json path emits ConvertTo-Json -Depth 5 which
+    # is multi-line pretty-printed (the OPPOSITE of the contract).
+    # Routing through the viewer would have either stripped --json
+    # (pre-v0.3.11.2) or emitted a non-contract-compliant multi-line
+    # JSON.
     $viewerPath = Join-Path $here 'lib\Vortex.AuditViewer.psm1'
     if (Test-Path $viewerPath) {
         Import-Module $viewerPath -Force -ErrorAction SilentlyContinue
