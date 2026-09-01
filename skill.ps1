@@ -368,7 +368,7 @@ if ($Arguments) {
         throw "--AuditFormat must be one of: table, tree, selfheal, hitl, json, html (got '$AuditFormat')"
     }
 }
-if ($Arguments -and ($Arguments -contains '--audit-trail') -and -not ($Arguments -contains '--json')) {
+if ($Arguments -and ($Arguments -contains '--audit-trail') -and -not ($Arguments -contains '--json' -or $Arguments -contains '--json-only')) {
     # v0.3.11.2 (bug fix): when --json is present, skip the audit-viewer
     # short-circuit (same fix as the second --audit-trail short-circuit
     # at line ~509). The engine's CmdAuditTrail --json path produces
@@ -453,7 +453,7 @@ if ($Arguments -and (
     ($Arguments | Where-Object { $_ -like '--stream' -or $_ -like '--stream=*' }) -or
     $Arguments -contains '--stream-stop' -or
     ($Arguments | Where-Object { $_ -like '--hint' -or $_ -like '--hint=*' })
-) -and -not ($Arguments -contains '--json')) {
+) -and -not ($Arguments -contains '--json' -or $Arguments -contains '--json-only')) {
     # v0.3.11.2 (bug fix): when --json is present, skip the streamer
     # short-circuit entirely. The engine's CmdStreamList --json path
     # already produces a single-line JSON object per
@@ -512,7 +512,7 @@ if ($Arguments -and (
 # v0.3.0 (PRD-17): --compile-memory runs the engine and prints a one-line
 # summary. --memory-show <slug> prints the prior-projects-context slice
 # that --with-memory would inject into the next dispatch.
-if ($Arguments.Count -ge 1 -and $Arguments[0] -eq '--audit-trail' -and -not ($Arguments -contains '--json')) {
+if ($Arguments.Count -ge 1 -and $Arguments[0] -eq '--audit-trail' -and -not ($Arguments -contains '--json' -or $Arguments -contains '--json-only')) {
     # v0.3.11.2 (bug fix): when --json is present, skip the audit-viewer
     # short-circuit. The engine's CmdAuditTrail --json path produces a
     # single-line JSON object per docs/cli-json-contract.md. The
