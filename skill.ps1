@@ -555,6 +555,97 @@ if ($Arguments.Count -ge 1 -and $Arguments[0] -eq '--audit-trail' -and -not ($Ar
     }
 }
 
+# --- 6b. TTY auto-detect (v0.3.21) ---------------------------------------------
+# When $env:VORTEX_AUTO_TTY = '1' (or the user passes --auto-ty), the wrapper
+# auto-picks the right mode:
+#   - TTY session (interactive terminal): auto-add --text (currently a no-op
+#     since text is the engine default, but future-proofs for v1.0.0 when
+#     JSON becomes the default)
+#   - Pipe (stdout redirected): auto-add --json-only (clean JSON for `| jq`,
+#     `| python -m json.tool`, etc.)
+# User-supplied --json / --json-only / --envelope / --text always take
+# precedence (the auto-detect is skipped). --auto-ty is stripped from
+# $Arguments before dispatch (it's a wrapper-only flag).
+$autoTtyRequested = ($env:VORTEX_AUTO_TTY -eq '1') -or ($Arguments -contains '--auto-ty')
+if ($autoTtyRequested) {
+    $Arguments = @($Arguments | Where-Object { $_ -ne '--auto-ty' })
+    $userPickedMode = ($Arguments | Where-Object {
+        $_ -in @('--json', '--json-only', '--envelope', '--text')
+    }).Count -gt 0
+    if (-not $userPickedMode) {
+        # [Console]::IsOutputRedirected is the canonical PowerShell way to
+        # detect a pipe: returns $true when stdout is being captured (pipe,
+        # file, Out-Null, etc.) and $false when it's a real terminal.
+        $isPipe = [Console]::IsOutputRedirected
+        if ($isPipe) {
+            # Pipe: clean JSON. --json-only implies JSON output AND
+            # suppresses text, so the consumer gets a single parseable
+            # line per dispatch. Append at the END of $Arguments
+            # because the engine's dispatcher reads args[0] as the
+            # command name (e.g. --package) -- prepending --json-only
+            # would make the dispatcher see it as the command.
+            $Arguments = @($Arguments | Where-Object { $_ -ne $null }) + @('--json-only')
+        } else {
+            # TTY: explicit --text. Currently a no-op (text is the
+            # engine default) but future-proofs for v1.0.0's JSON
+            # default. Calling operators always see the human-readable
+            # view in interactive sessions.
+            $Arguments = @($Arguments | Where-Object { $_ -ne $null }) + @('--text')
+        }
+    }
+}
+
+# --- 6. Dispatch ------------------------------------------------------------
+# Invoke-Vortex is the thin wrapper the Vortex.psm1 module exports. The
+# engine is the canonical implementation of every command. Forward argv.
+# v0.1.11: short-circuit --audit-trail to use the PowerShell-side viewer
+# (lib/Vortex.AuditViewer.psm1). This avoids the engine's basic --audit-trail
+# output being mixed with the rich viewer's output.
+# v0.3.0 (PRD-17): --compile-memory runs the engine and prints a one-line
+# summary. --memory-show <slug> prints the prior-projects-context slice
+# that --with-memory would inject into the next dispatch.
+if ($Arguments.Count -ge 1 -and $Arguments[0] -eq '--audit-trail' -and -not ($Arguments -contains '--json' -or $Arguments -contains '--json-only')) {
+    # v0.3.11.2 (bug fix): when --json is present, skip the audit-viewer
+    # short-circuit. The engine's CmdAuditTrail --json path produces a
+    # single-line JSON object per docs/cli-json-contract.md. The
+    # viewer's --Format json path emits ConvertTo-Json -Depth 5 which
+    # is multi-line pretty-printed (the OPPOSITE of the contract).
+    # Routing through the viewer would have either stripped --json
+    # (pre-v0.3.11.2) or emitted a non-contract-compliant multi-line
+    # JSON.
+    $viewerPath = Join-Path $here 'lib\Vortex.AuditViewer.psm1'
+    if (Test-Path $viewerPath) {
+        Import-Module $viewerPath -Force -ErrorAction SilentlyContinue
+        $filters = @{}
+        $i = 1
+        while ($i -lt $Arguments.Count) {
+            $a = $Arguments[$i]
+            if ($a -eq '--project' -and ($i + 1) -lt $Arguments.Count) { $filters['Project'] = $Arguments[$i + 1]; $i += 2 }
+            elseif ($a -eq '--task' -and ($i + 1) -lt $Arguments.Count)     { $filters['Task'] = $Arguments[$i + 1]; $i += 2 }
+            elseif ($a -eq '--agent' -and ($i + 1) -lt $Arguments.Count)    { $filters['Agent'] = $Arguments[$i + 1]; $i += 2 }
+            elseif ($a -eq '--severity' -and ($i + 1) -lt $Arguments.Count){ $filters['Severity'] = $Arguments[$i + 1]; $i += 2 }
+            elseif ($a -eq '--since' -and ($i + 1) -lt $Arguments.Count)   {
+                $s = $Arguments[$i + 1]
+                if ($s -match '^\d+d$') {
+                    $filters['Since'] = (Get-Date).AddDays(-[int]$s.TrimEnd('d'))
+                } else {
+                    $filters['Since'] = [datetime]$s
+                }
+                $i += 2
+            }
+            else { $i++ }
+        }
+        $sinceArg = if ($filters.ContainsKey('Since')) { $filters['Since'] } else { [datetime]::MinValue }
+        Get-VortexAuditTrail -As $AuditFormat `
+            -Project ($filters['Project']  ?? '') `
+            -Task    ($filters['Task']     ?? '') `
+            -Agent   ($filters['Agent']    ?? '') `
+            -Severity($filters['Severity'] ?? '') `
+            -Since   $sinceArg
+        exit 0
+    }
+}
+
 Invoke-Vortex -Arguments $Arguments
 $rc = Get-VortexLastExitCode
 exit $rc
